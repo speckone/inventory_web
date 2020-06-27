@@ -30,6 +30,12 @@
             <template v-slot:group.header="{ group, headers }">
                 <th :colspan="headers.length">
                     {{ getOrderStatus(group) }} Order: {{ group }} - {{ getOrderDate(group) }}
+                    <v-divider
+                            class="mx-8"
+                            inset
+                            vertical
+                    ></v-divider>
+                    Cost {{ getOrderCost(group) | currency }}
                 </th>
             </template>
             <template v-slot:group.summary="{ group, headers }">
@@ -106,6 +112,11 @@
             this.getOrderItemData();
             this.getUnitData();
         },
+        filters: {
+            currency: function (value) {
+                return '$' + parseFloat(value).toFixed(2);
+            }
+        },
         methods: {
             getOrderDate: function (order_id) {
                 const current_order = this.order_data.find(order => order.id == order_id)
@@ -114,6 +125,10 @@
             getOrderStatus: function (order_id) {
                 const current_order = this.order_data.find(order => order.id == order_id)
                 return current_order.status
+            },
+            getOrderCost: function (order_id) {
+                const current_order = this.order_data.find(order => order.id == order_id)
+                return current_order.cost
             },
             isNew: function (order_id) {
                 const current_order = this.order_data.find(order => order.id == order_id)
