@@ -269,16 +269,25 @@
                     });
             },
             createOrder: function (order, path = '/api/v1/order') {
-                let url = process.env.VUE_APP_BASE_URL + path
-                console.log(url)
-                console.log(order)
-                this.axios.post(url)
-                    .then(() => {
-                        this.$router.push('/orders')
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
+                this.$confirm('Completed inventory?', {
+                    icon: 'mdi-alert',
+                    buttonTrueText: 'Yes! Create my order.'
+                }).then(
+                    confirmed => {
+                        if (confirmed) {
+                            let url = process.env.VUE_APP_BASE_URL + path
+                            console.log(url)
+                            console.log(order)
+                            this.axios.post(url)
+                                .then(() => {
+                                    this.$router.push('/orders')
+                                })
+                                .catch(function (error) {
+                                    alert(error);
+                                });
+                        }
+                    }
+                )
             },
             deleteItem: function (inventory, path = '/api/v1/inventory') {
                 this.$confirm('Delete inventory: ' + inventory.name + '?', {icon: 'mdi-alert'}).then(

@@ -140,21 +140,31 @@
                     .then(response => (this.unit_data = response.data))
             },
             submitOrder: function (order, path = '/api/v1/order') {
-                let body = {"status": "Submitted"};
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
-                    .then(() => {
-                        this.getOrderData();
-                        let snackbar = {
-                            show: true,
-                            text: "Order submitted",
-                            color: 'success',
-                            timeout: 2000
-                        };
-                        this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
+                this.$confirm('Send order to Sharon?', {
+                    icon: 'mdi-alert',
+                    buttonTrueText: 'Yes! Send my order.'
+                }).then(
+                    confirmed => {
+                        if (confirmed) {
+                            let body = {"status": "Submitted"};
+                            this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
+                                .then(() => {
+                                    this.getOrderData();
+                                    let snackbar = {
+                                        show: true,
+                                        text: "Order submitted",
+                                        color: 'success',
+                                        timeout: 2000
+                                    };
+                                    this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
+                                })
+                                .catch(function (error) {
+                                    alert(error);
+                                });
+                        }
+                    }
+                )
+
             },
             receiveOrder: function (order, path = '/api/v1/order') {
                 let body = {"status": "Received"};
