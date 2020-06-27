@@ -115,7 +115,7 @@
         }),
         computed: {
             formTitle() {
-                return this.current_site_id === -1 ? 'New Product' : 'Edit Product'
+                return this.current_product_id === -1 ? 'New Product' : 'Edit Product'
             },
             current_product_name: {
                 get: function () {
@@ -163,6 +163,18 @@
                 },
                 set: function (new_value) {
                     this.current_product.vendor_id = new_value
+                }
+            },
+            current_product_id: {
+                get: function () {
+                    if (this.current_product) {
+                        return this.current_product.id
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_product.id = new_value
                 }
             },
             product_body() {
@@ -249,7 +261,7 @@
                 this.dialog = false;
                 this.$refs.form.reset();
                 this.current_product_id = -1;
-                this.current_product = {'name': null}
+                this.current_product = {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null}
             },
             save() {
                 if (this.$refs.form.validate()) {
