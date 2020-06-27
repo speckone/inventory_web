@@ -9,6 +9,27 @@
                     <v-toolbar-title>Products</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
                     <v-spacer/>
+
+                </v-toolbar>
+            </template>
+            <template v-slot:item.actions="{ item }">
+                <v-icon
+                        small
+                        class="mr-2"
+                        @click="editItem(item)"
+                >
+                    mdi-pencil
+                </v-icon>
+                <v-icon
+                        small
+                        @click="deleteItem(item)"
+                >
+                    mdi-delete
+                </v-icon>
+            </template>
+            <template v-slot:footer>
+                <v-toolbar flat color="white">
+                    <v-spacer/>
                     <v-dialog class="mx-auto" max-width="500" v-model="dialog" @click:outside="close">
                         <template v-slot:activator="{ on }">
                             <v-btn color="primary" dark class="mb-2" v-on="on">New Product</v-btn>
@@ -66,21 +87,7 @@
 
                 </v-toolbar>
             </template>
-            <template v-slot:item.actions="{ item }">
-                <v-icon
-                        small
-                        class="mr-2"
-                        @click="editItem(item)"
-                >
-                    mdi-pencil
-                </v-icon>
-                <v-icon
-                        small
-                        @click="deleteItem(item)"
-                >
-                    mdi-delete
-                </v-icon>
-            </template>
+
         </v-data-table>
     </div>
 </template>
