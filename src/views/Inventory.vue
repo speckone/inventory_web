@@ -1,0 +1,331 @@
+<template>
+    <div>
+        <v-data-table
+                :headers="headers"
+                :items="items"
+        >
+            <template v-slot:top>
+                <v-toolbar flat color="white">
+                    <v-toolbar-title>Inventory</v-toolbar-title>
+                    <v-divider class="mx-4" inset vertical/>
+                    <v-spacer/>
+                    <v-dialog class="mx-auto" max-width="500" v-model="dialog" @click:outside="close">
+                        <template v-slot:activator="{ on }">
+                            <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
+                        </template>
+                        <v-card>
+                            <v-form lazy-validation v-model="valid" ref="form">
+
+                                <v-card-title>
+                                    <span class="headline">{{ formTitle }}</span>
+                                </v-card-title>
+                                <SelectProduct :selected_id.sync="current_product_id"/>
+
+                                <v-card-text>
+                                    <v-container>
+                                        <v-row>
+                                            <v-col cols="12">
+                                                <v-text-field
+                                                        label="Quantity"
+                                                        v-model.number="current_quantity"
+                                                        :rules="[v => !!v || 'Quantity is required']"
+                                                />
+                                            </v-col>
+                                        </v-row>
+                                    </v-container>
+                                </v-card-text>
+
+                                <v-card-text>
+                                    <v-container>
+                                        <v-row>
+                                            <v-col cols="12">
+                                                <v-text-field
+                                                        label="Capacity"
+                                                        v-model.number="current_capacity"
+                                                        :rules="[v => !!v || 'Capacity is required']"
+                                                />
+                                            </v-col>
+                                        </v-row>
+                                    </v-container>
+                                </v-card-text>
+
+                                <v-card-text>
+                                    <v-container>
+                                        <v-row>
+                                            <v-col cols="12">
+                                                <v-text-field
+                                                        label="Reorder Level"
+                                                        v-model.number="current_reorder_level"
+                                                        :rules="[v => !!v || 'Reorder Level is required']"
+                                                />
+                                            </v-col>
+                                        </v-row>
+                                    </v-container>
+                                </v-card-text>
+
+                                <v-card-actions>
+                                    <v-spacer></v-spacer>
+                                    <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
+                                    <v-btn color="blue darken-1" text @click="save">Save</v-btn>
+                                </v-card-actions>
+                                <v-snackbar
+                                        v-model="snackbar"
+                                        :timeout=1500
+                                        color="success"
+                                >Site updated
+                                </v-snackbar>
+                            </v-form>
+                        </v-card>
+                    </v-dialog>
+                    <v-btn color="primary" dark class="mb-2" @click="createOrder">Create Order</v-btn>
+
+                </v-toolbar>
+            </template>
+            <template v-slot:item.actions="{ item }">
+                <v-icon
+                        small
+                        class="mr-2"
+                        @click="editItem(item)"
+                >
+                    mdi-pencil
+                </v-icon>
+                <v-icon
+                        small
+                        @click="deleteItem(item)"
+                >
+                    mdi-delete
+                </v-icon>
+            </template>
+
+            <template v-slot:item.quantity="props">
+                <v-edit-dialog
+                        :return-value="props.item.quantity"
+                        large
+                        persistent
+                        @save="updateItemQuantity(props.item)"
+                        @cancel="close"
+                        @close="close"
+                >
+                    <div>{{ props.item.quantity }}</div>
+                    <template v-slot:input>
+                        <div class="mt-4 title">Update Quantity</div>
+                    </template>
+                    <template v-slot:input>
+                        <v-text-field
+                                v-model.number="props.item.quantity"
+                                :rules="[v => !!v || 'Quantity is required']"
+                                label="Edit"
+                                single-line
+                                autofocus
+                        ></v-text-field>
+                    </template>
+                </v-edit-dialog>
+            </template>
+
+        </v-data-table>
+    </div>
+</template>
+
+<script>
+    import SelectProduct from "../components/SelectProduct";
+
+    export default {
+        name: "inventory",
+        components: {
+            SelectProduct
+        },
+        data: () => ({
+            inventory_data: null,
+            product_data: null,
+            headers: [
+                {text: 'ID', value: 'id'},
+                {text: 'Product', value: 'product'},
+                {text: 'Quantity', value: 'quantity'},
+                {text: 'Capacity', value: 'capacity'},
+                {text: 'Reorder Level', value: 'reorder_level'},
+                {text: 'Cost', value: 'cost'},
+                {text: 'Needed', value: 'needed_at_store'},
+                {text: 'Actions', value: 'actions', sortable: false},
+            ],
+            pagination: {},
+            dialog: false,
+            current_inventory: {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null},
+            valid: false,
+            snackbar: false,
+        }),
+        computed: {
+            formTitle() {
+                return this.current_inventory_id === -1 ? 'New Item' : 'Edit Item'
+            },
+            current_product_id: {
+                get: function () {
+                    if (this.current_inventory) {
+                        return this.current_inventory.product_id
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_inventory.product_id = new_value
+                }
+            },
+            current_quantity: {
+                get: function () {
+                    if (this.current_inventory) {
+                        return this.current_inventory.quantity
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_inventory.quantity = new_value
+                }
+            },
+            current_capacity: {
+                get: function () {
+                    if (this.current_inventory) {
+                        return this.current_inventory.capacity
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_inventory.capacity = new_value
+                }
+            },
+            current_reorder_level: {
+                get: function () {
+                    if (this.current_inventory) {
+                        return this.current_inventory.reorder_level
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_inventory.reorder_level = new_value
+                }
+            },
+            inventory_body() {
+                return {
+                    "product_id": this.current_product_id,
+                    "quantity": this.current_quantity,
+                    "capacity": this.current_capacity,
+                    "reorder_level": this.current_reorder_level
+                }
+            },
+            items() {
+                if (this.inventory_data && this.product_data) {
+                    return this.inventory_data.map(inventory => {
+                        const inventoryProduct = this.product_data.find(product => product.id == inventory.product_id)
+                        inventory.product = inventoryProduct.name
+                        return inventory
+                    })
+                } else {
+                    return []
+                }
+            }
+        },
+        mounted() {
+            this.getProductData();
+            this.getinventoryData();
+        },
+        methods: {
+            getinventoryData: function (path = '/api/v1/inventory') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path)
+                    .then(response => (this.inventory_data = response.data))
+            },
+            getProductData: function (path = '/api/v1/product') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path)
+                    .then(response => (this.product_data = response.data))
+            },
+            updateItem: function (path = '/api/v1/inventory') {
+                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_inventory_id, this.inventory_body)
+                    .then(() => {
+                        this.getinventoryData();
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            updateItemQuantity: function (item, path = '/api/v1/inventory') {
+                let body = {
+                    'quantity': item.quantity
+                }
+                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + item.id, body)
+                    .then(() => {
+                        this.getinventoryData();
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            addItem: function (path = '/api/v1/inventory') {
+                this.axios.post(process.env.VUE_APP_BASE_URL + path, this.inventory_body)
+                    .then(() => {
+                        this.getinventoryData();
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            createOrder: function (order, path = '/api/v1/order') {
+                let url = process.env.VUE_APP_BASE_URL + path
+                console.log(url)
+                console.log(order)
+                this.axios.post(url)
+                    .then(() => {
+                        this.$router.push('/orders')
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            deleteItem: function (inventory, path = '/api/v1/inventory') {
+                this.$confirm('Delete inventory: ' + inventory.name + '?', {icon: 'mdi-alert'}).then(
+                    confirmed => {
+                        if (confirmed) {
+                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + inventory.id)
+                                .then(() => {
+                                    this.getinventoryData();
+                                })
+                                .catch(error => {
+                                    alert(error);
+                                });
+                        }
+                    }
+                )
+
+            },
+            editItem(item) {
+                this.current_inventory = Object.assign({}, item);
+                this.current_inventory_id = item.id;
+                this.dialog = true;
+            },
+            close() {
+                this.dialog = false;
+                if (this.$refs.form) {
+                    this.$refs.form.reset();
+                }
+                this.current_inventory_id = -1;
+                this.current_inventory = {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null}
+            },
+            save() {
+                if (this.$refs.form.validate()) {
+                    if (this.current_inventory_id > -1) {
+                        this.updateItem();
+                    } else {
+                        this.addItem();
+                    }
+                    setTimeout(() => {
+                        this.close()
+                    }, 300)
+                }
+            },
+        },
+
+    }
+</script>
+
+<style scoped>
+
+</style>
