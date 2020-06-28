@@ -73,6 +73,11 @@
                     router: 'products'
                 },
                 {
+                    title: 'Categories',
+                    avatar: 'mdi-view-list',
+                    router: 'category'
+                },
+                {
                     title: 'Vendors',
                     avatar: 'mdi-store',
                     router: 'vendors'

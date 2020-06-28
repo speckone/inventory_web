@@ -90,10 +90,11 @@
             current_vendor: {'name': null},
             valid: false,
             snackbar: false,
+            current_vendor_id: -1
         }),
         computed: {
             formTitle() {
-                return this.current_site_id === -1 ? 'New Vendor' : 'Edit Vendor'
+                return this.current_vendor_id === -1 ? 'New Vendor' : 'Edit Vendor'
             },
             current_vendor_name: {
                 get: function () {

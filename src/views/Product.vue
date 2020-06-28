@@ -67,6 +67,7 @@
                                         </v-row>
                                     </v-container>
                                 </v-card-text>
+                                <SelectCategory :selected_id.sync="current_category_id"/>
                                 <SelectUnit :selected_id.sync="current_unit_id"/>
                                 <SelectVendor :selected_id.sync="current_vendor_id"/>
 
@@ -95,21 +96,25 @@
 <script>
     import SelectUnit from "../components/SelectUnit";
     import SelectVendor from "../components/SelectVendor";
+    import SelectCategory from "../components/SelectCategory";
 
     export default {
         name: "Product",
         components: {
             SelectUnit,
-            SelectVendor
+            SelectVendor,
+            SelectCategory
         },
         data: () => ({
             product_data: null,
             unit_data: null,
             vendor_data: null,
+            category_data: null,
             headers: [
                 {text: 'ID', value: 'id'},
                 {text: 'Name', value: 'name'},
                 {text: 'Unit', value: 'unit'},
+                {text: 'Category', value: 'category'},
                 {text: 'Unit Price', value: 'unit_price'},
                 {text: 'Vendor', value: 'vendor'},
                 {text: 'Actions', value: 'actions', sortable: false},
@@ -119,6 +124,7 @@
             current_product: {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null},
             valid: false,
             snackbar: false,
+            current_product_id: -1
         }),
         computed: {
             formTitle() {
@@ -148,6 +154,18 @@
                     this.current_product.unit_price = new_value
                 }
             },
+            current_category_id: {
+                get: function () {
+                    if (this.current_product) {
+                        return this.current_product.category_id
+                    } else {
+                        return null
+                    }
+                },
+                set: function (new_value) {
+                    this.current_product.category_id = new_value
+                }
+            },
             current_unit_id: {
                 get: function () {
                     if (this.current_product) {
@@ -172,32 +190,28 @@
                     this.current_product.vendor_id = new_value
                 }
             },
-            current_product_id: {
-                get: function () {
-                    if (this.current_product) {
-                        return this.current_product.id
-                    } else {
-                        return null
-                    }
-                },
-                set: function (new_value) {
-                    this.current_product.id = new_value
-                }
-            },
             product_body() {
                 return {
                     "name": this.current_product_name,
                     "unit_price": this.current_unit_price,
                     "unit_id": this.current_unit_id,
-                    "vendor_id": this.current_vendor_id
+                    "vendor_id": this.current_vendor_id,
+                    "category_id": this.current_category_id
                 }
             },
             items() {
-                if (this.product_data && this.unit_data && this.vendor_data) {
+                if (this.product_data && this.unit_data && this.vendor_data && this.category_data) {
                     return this.product_data.map(product => {
                         const productUnit = this.unit_data.find(unit => unit.id == product.unit_id)
+                        const productCategory = this.category_data.find(category => category.id == product.category_id)
                         const productVendor = this.vendor_data.find(vendor => vendor.id == product.vendor_id)
                         product.unit = productUnit.name
+                        if(productCategory === undefined){
+                            product.category = "Null"
+                        }
+                        else {
+                            product.category = productCategory.name
+                        }
                         product.vendor = productVendor.name
                         return product
                     })
@@ -210,6 +224,7 @@
             this.getProductData();
             this.getUnitData();
             this.getVendorData();
+            this.getCategoryData();
         },
         methods: {
             getProductData: function (path = '/api/v1/product') {
@@ -219,6 +234,10 @@
             getUnitData: function (path = '/api/v1/unit') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.unit_data = response.data))
+            },
+            getCategoryData: function (path = '/api/v1/category') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path)
+                    .then(response => (this.category_data = response.data))
             },
             getVendorData: function (path = '/api/v1/vendor') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)

@@ -25,6 +25,11 @@ Vue.use(VueRouter)
     component: () => import('../views/Vendor.vue')
   },
   {
+    path: '/category',
+    name: 'Categories',
+    component: () => import('../views/Category.vue')
+  },
+  {
     path: '/units',
     name: 'Units',
     component: () => import('../views/Unit.vue')

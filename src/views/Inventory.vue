@@ -3,6 +3,8 @@
         <v-data-table
                 :headers="headers"
                 :items="items"
+                group-by="category"
+                group-desc
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
@@ -102,7 +104,11 @@
                     mdi-delete
                 </v-icon>
             </template>
-
+            <template v-slot:group.header="{ group, headers }">
+                <th :colspan="headers.length">
+                    {{ group }}
+                </th>
+            </template>
             <template v-slot:item.quantity="props">
                 <v-edit-dialog
                         :return-value="props.item.quantity"
@@ -143,6 +149,7 @@
         data: () => ({
             inventory_data: null,
             product_data: null,
+            category_data: null,
             headers: [
                 {text: 'ID', value: 'id'},
                 {text: 'Product', value: 'product'},
@@ -158,6 +165,7 @@
             current_inventory: {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null},
             valid: false,
             snackbar: false,
+            current_inventory_id: -1
         }),
         computed: {
             formTitle() {
@@ -220,10 +228,16 @@
                 }
             },
             items() {
-                if (this.inventory_data && this.product_data) {
+                if (this.inventory_data && this.product_data && this.category_data) {
                     return this.inventory_data.map(inventory => {
                         const inventoryProduct = this.product_data.find(product => product.id == inventory.product_id)
+                        const inventoryCategory = this.category_data.find(category => category.id == inventoryProduct.category_id)
                         inventory.product = inventoryProduct.name
+                        if (inventoryCategory === undefined) {
+                            inventory.category = "Null"
+                        } else {
+                            inventory.category = inventoryCategory.name
+                        }
                         return inventory
                     })
                 } else {
@@ -234,6 +248,7 @@
         mounted() {
             this.getProductData();
             this.getinventoryData();
+            this.getCategoryData();
         },
         methods: {
             getinventoryData: function (path = '/api/v1/inventory') {
@@ -243,6 +258,10 @@
             getProductData: function (path = '/api/v1/product') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.product_data = response.data))
+            },
+            getCategoryData: function (path = '/api/v1/category') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path)
+                    .then(response => (this.category_data = response.data))
             },
             updateItem: function (path = '/api/v1/inventory') {
                 this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_inventory_id, this.inventory_body)

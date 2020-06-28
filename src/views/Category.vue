@@ -6,7 +6,7 @@
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
-                    <v-toolbar-title>Units</v-toolbar-title>
+                    <v-toolbar-title>Categories</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
                     <v-spacer/>
                 </v-toolbar>
@@ -31,7 +31,7 @@
                     <v-spacer/>
                     <v-dialog class="mx-auto" max-width="500" v-model="dialog" @click:outside="close">
                         <template v-slot:activator="{ on }">
-                            <v-btn color="primary" dark class="mb-2" v-on="on">New Unit</v-btn>
+                            <v-btn color="primary" dark class="mb-2" v-on="on">New Category</v-btn>
                         </template>
                         <v-card>
                             <v-form lazy-validation v-model="valid" ref="form">
@@ -46,7 +46,7 @@
                                             <v-col cols="12">
                                                 <v-text-field
                                                         label="Name"
-                                                        v-model="current_unit_name"
+                                                        v-model="current_category_name"
                                                         :rules="[v => !!v || 'Name is required']"
                                                 />
                                             </v-col>
@@ -77,82 +77,82 @@
 
 <script>
     export default {
-        name: "Unit",
+        name: "Category",
         data: () => ({
-            unit_data: null,
+            category_data: null,
             headers: [
                 {text: 'ID', value: 'id'},
                 {text: 'Name', value: 'name'},
                 {text: 'Actions', value: 'actions', sortable: false},
             ],
             dialog: false,
-            current_unit: {'name': null},
+            current_category: {'name': null},
             valid: false,
             snackbar: false,
-            current_unit_id: -1
+            current_category_id: -1
         }),
         computed: {
             formTitle() {
-                return this.current_unit_id === -1 ? 'New Unit' : 'Edit Unit'
+                return this.current_category_id === -1 ? 'New Category' : 'Edit Category'
             },
-            current_unit_name: {
+            current_category_name: {
                 get: function () {
-                    if (this.current_unit) {
-                        return this.current_unit.name
+                    if (this.current_category) {
+                        return this.current_category.name
                     } else {
                         return null
                     }
                 },
                 set: function (new_value) {
-                    this.current_unit.name = new_value
+                    this.current_category.name = new_value
                 }
             },
-            unit_body() {
+            category_body() {
                 return {
-                    "name": this.current_unit_name
+                    "name": this.current_category_name
                 }
             },
             items() {
-                if (this.unit_data) {
-                    return this.unit_data
+                if (this.category_data) {
+                    return this.category_data
                 } else {
                     return []
                 }
             }
         },
         mounted() {
-            this.getUnitData();
+            this.getCategoryData();
         },
         methods: {
-            getUnitData: function (path = '/api/v1/unit') {
+            getCategoryData: function (path = '/api/v1/category') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.unit_data = response.data))
+                    .then(response => (this.category_data = response.data))
             },
-            updateItem: function (path = '/api/v1/unit') {
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_unit_id, this.unit_body)
+            updateItem: function (path = '/api/v1/category') {
+                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_category_id, this.category_body)
                     .then(() => {
-                        this.getUnitData();
+                        this.getCategoryData();
                     })
                     .catch(function (error) {
                         alert(error);
                     });
             },
-            addItem: function (path = '/api/v1/unit') {
-                this.axios.post(process.env.VUE_APP_BASE_URL + path, this.unit_body)
+            addItem: function (path = '/api/v1/category') {
+                this.axios.post(process.env.VUE_APP_BASE_URL + path, this.category_body)
                     .then(() => {
-                        this.getUnitData();
+                        this.getCategoryData();
                     })
                     .catch(function (error) {
                         alert(error);
                     });
             },
-            deleteItem: function (unit, path = '/api/v1/unit') {
-                this.$confirm('Delete Unit: ' + unit.name + '?', {icon: 'mdi-alert'}).then(
+            deleteItem: function (category, path = '/api/v1/category') {
+                this.$confirm('Delete Category: ' + category.name + '?', {icon: 'mdi-alert'}).then(
                     confirmed => {
                         if (confirmed) {
-                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + unit.id)
+                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + category.id)
                                 .then(() => {
-                                    this.getUnitData();
+                                    this.getCategoryData();
                                 })
                                 .catch(error => {
                                     alert(error);
@@ -164,19 +164,19 @@
             },
 
             editItem(item) {
-                this.current_unit = Object.assign({}, item);
-                this.current_unit_id = item.id;
+                this.current_category = Object.assign({}, item);
+                this.current_category_id = item.id;
                 this.dialog = true;
             },
             close() {
                 this.dialog = false;
                 this.$refs.form.reset();
-                this.current_unit_id = -1;
-                this.current_unit = {'name': null}
+                this.current_category_id = -1;
+                this.current_category = {'name': null}
             },
             save() {
                 if (this.$refs.form.validate()) {
-                    if (this.current_unit_id > -1) {
+                    if (this.current_category_id > -1) {
                         this.updateItem();
                     } else {
                         this.addItem();
