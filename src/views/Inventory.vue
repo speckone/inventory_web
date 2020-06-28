@@ -3,16 +3,32 @@
         <v-data-table
                 :headers="headers"
                 :items="items"
+                item-key="product"
                 group-by="category"
-                group-desc
+                :search="search_category"
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
                     <v-toolbar-title>Inventory</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
+                    <v-flex xs2>
+                        <v-select
+                                :items="categories"
+                                label="Category"
+                                v-model="search_category"
+                                clearable
+                        ></v-select>
+                    </v-flex>
                     <v-spacer/>
                 </v-toolbar>
             </template>
+                <template slot="headers" slot-scope="props">
+                    <tr>
+                        <th v-for="header in props.headers" :key="header.text">
+                            {{ header.text }}
+                        </th>
+                    </tr>
+                </template>
 
             <template v-slot:footer>
                 <v-toolbar flat color="white">
@@ -150,15 +166,17 @@
             inventory_data: null,
             product_data: null,
             category_data: null,
+            search_category: "",
             headers: [
-                {text: 'ID', value: 'id'},
-                {text: 'Product', value: 'product'},
-                {text: 'Quantity', value: 'quantity'},
-                {text: 'Capacity', value: 'capacity'},
-                {text: 'Reorder Level', value: 'reorder_level'},
-                {text: 'Cost', value: 'cost'},
-                {text: 'Needed', value: 'needed_at_store'},
-                {text: 'Actions', value: 'actions', sortable: false},
+                {text: 'ID', value: 'id', groupable: false},
+                {text: 'Product', value: 'product', groupable: false},
+                {text: 'Category', value: 'category', groupable: true},
+                {text: 'Quantity', value: 'quantity', groupable: false},
+                {text: 'Capacity', value: 'capacity', groupable: false},
+                {text: 'Reorder Level', value: 'reorder_level', groupable: false},
+                {text: 'Cost', value: 'cost', groupable: false},
+                {text: 'Needed', value: 'needed_at_store', groupable: false},
+                {text: 'Actions', value: 'actions', sortable: false, groupable: false},
             ],
             pagination: {},
             dialog: false,
@@ -239,6 +257,15 @@
                             inventory.category = inventoryCategory.name
                         }
                         return inventory
+                    })
+                } else {
+                    return []
+                }
+            },
+            categories() {
+                if (this.category_data) {
+                    return this.category_data.map(category => {
+                        return category.name
                     })
                 } else {
                     return []
@@ -355,6 +382,7 @@
                     }, 300)
                 }
             },
+
         },
 
     }

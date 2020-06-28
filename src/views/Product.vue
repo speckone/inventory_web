@@ -121,7 +121,7 @@
             ],
             pagination: {},
             dialog: false,
-            current_product: {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null},
+            current_product: {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null, "category_id": null},
             valid: false,
             snackbar: false,
             current_product_id: -1
@@ -287,7 +287,7 @@
                 this.dialog = false;
                 this.$refs.form.reset();
                 this.current_product_id = -1;
-                this.current_product = {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null}
+                this.current_product = {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null , "category_id": null}
             },
             save() {
                 if (this.$refs.form.validate()) {
