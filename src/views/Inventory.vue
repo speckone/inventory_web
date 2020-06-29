@@ -22,13 +22,13 @@
                     <v-spacer/>
                 </v-toolbar>
             </template>
-                <template slot="headers" slot-scope="props">
-                    <tr>
-                        <th v-for="header in props.headers" :key="header.text">
-                            {{ header.text }}
-                        </th>
-                    </tr>
-                </template>
+            <template slot="headers" slot-scope="props">
+                <tr>
+                    <th v-for="header in props.headers" :key="header.text">
+                        {{ header.text }}
+                    </th>
+                </tr>
+            </template>
 
             <template v-slot:footer>
                 <v-toolbar flat color="white">
@@ -166,10 +166,12 @@
             inventory_data: null,
             product_data: null,
             category_data: null,
+            unit_data: null,
             search_category: "",
             headers: [
                 {text: 'ID', value: 'id', groupable: false},
                 {text: 'Product', value: 'product', groupable: false},
+                {text: 'Unit', value: 'unit', groupable: false},
                 {text: 'Category', value: 'category', groupable: true},
                 {text: 'Quantity', value: 'quantity', groupable: false},
                 {text: 'Capacity', value: 'capacity', groupable: false},
@@ -246,10 +248,12 @@
                 }
             },
             items() {
-                if (this.inventory_data && this.product_data && this.category_data) {
+                if (this.inventory_data && this.product_data && this.category_data && this.unit_data) {
                     return this.inventory_data.map(inventory => {
                         const inventoryProduct = this.product_data.find(product => product.id == inventory.product_id)
                         const inventoryCategory = this.category_data.find(category => category.id == inventoryProduct.category_id)
+                        const inventoryUnit = this.unit_data.find(unit => unit.id == inventoryProduct.unit_id)
+                        inventory.unit = inventoryUnit.name
                         inventory.product = inventoryProduct.name
                         if (inventoryCategory === undefined) {
                             inventory.category = "Null"
@@ -273,6 +277,7 @@
             }
         },
         mounted() {
+            this.getUnitData();
             this.getProductData();
             this.getinventoryData();
             this.getCategoryData();
@@ -289,6 +294,10 @@
             getCategoryData: function (path = '/api/v1/category') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.category_data = response.data))
+            },
+            getUnitData: function (path = '/api/v1/unit') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path)
+                    .then(response => (this.unit_data = response.data))
             },
             updateItem: function (path = '/api/v1/inventory') {
                 this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_inventory_id, this.inventory_body)
