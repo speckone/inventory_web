@@ -3,13 +3,20 @@
         <v-data-table
                 :headers="headers"
                 :items="items"
+                :search="search"
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
                     <v-toolbar-title>Products</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
                     <v-spacer/>
-
+                    <v-text-field
+                            v-model="search"
+                            append-icon="mdi-magnify"
+                            label="Search"
+                            single-line
+                            hide-details
+                    ></v-text-field>
                 </v-toolbar>
             </template>
             <template v-slot:item.actions="{ item }">
@@ -110,6 +117,7 @@
             unit_data: null,
             vendor_data: null,
             category_data: null,
+            search: "",
             headers: [
                 {text: 'ID', value: 'id'},
                 {text: 'Name', value: 'name'},
@@ -121,7 +129,13 @@
             ],
             pagination: {},
             dialog: false,
-            current_product: {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null, "category_id": null},
+            current_product: {
+                'name': null,
+                'unit_price': null,
+                'unit_id': null,
+                'vendor_id': null,
+                "category_id": null
+            },
             valid: false,
             snackbar: false,
             current_product_id: -1
@@ -206,10 +220,9 @@
                         const productCategory = this.category_data.find(category => category.id == product.category_id)
                         const productVendor = this.vendor_data.find(vendor => vendor.id == product.vendor_id)
                         product.unit = productUnit.name
-                        if(productCategory === undefined){
+                        if (productCategory === undefined) {
                             product.category = "Null"
-                        }
-                        else {
+                        } else {
                             product.category = productCategory.name
                         }
                         product.vendor = productVendor.name
@@ -287,7 +300,13 @@
                 this.dialog = false;
                 this.$refs.form.reset();
                 this.current_product_id = -1;
-                this.current_product = {'name': null, 'unit_price': null, 'unit_id': null, 'vendor_id': null , "category_id": null}
+                this.current_product = {
+                    'name': null,
+                    'unit_price': null,
+                    'unit_id': null,
+                    'vendor_id': null,
+                    "category_id": null
+                }
             },
             save() {
                 if (this.$refs.form.validate()) {
