@@ -22,12 +22,8 @@
                     <v-spacer/>
                 </v-toolbar>
             </template>
-            <template slot="headers" slot-scope="props">
-                <tr>
-                    <th v-for="header in props.headers" :key="header.text">
-                        {{ header.text }}
-                    </th>
-                </tr>
+            <template v-slot:item.cost="{ item }">
+                {{ item.cost | currency }}
             </template>
 
             <template v-slot:footer>
@@ -187,6 +183,11 @@
             snackbar: false,
             current_inventory_id: -1
         }),
+        filters: {
+            currency: function (value) {
+                return '$' + parseFloat(value).toFixed(2);
+            }
+        },
         computed: {
             formTitle() {
                 return this.current_inventory_id === -1 ? 'New Item' : 'Edit Item'
