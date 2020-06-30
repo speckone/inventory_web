@@ -5,21 +5,24 @@
                 :items="items"
                 item-key="product"
                 group-by="category"
-                :search="search_category"
+                :search="search_product"
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
                     <v-toolbar-title>Inventory</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
-                    <v-flex xs2>
-                        <v-select
-                                :items="categories"
-                                label="Category"
-                                v-model="search_category"
-                                clearable
-                        ></v-select>
-                    </v-flex>
+                    <v-text-field
+                            v-model="search_product"
+                            append-icon="mdi-magnify"
+                            label="Search"
+                    ></v-text-field>
                     <v-spacer/>
+                    <v-select
+                            :items="categories"
+                            label="Category"
+                            v-model="search_category"
+                            clearable
+                    ></v-select>
                 </v-toolbar>
             </template>
             <template v-slot:item.cost="{ item }">
@@ -30,9 +33,6 @@
                 <v-toolbar flat color="white">
                     <v-spacer/>
                     <v-dialog class="mx-auto" max-width="500" v-model="dialog" @click:outside="close">
-                        <template v-slot:activator="{ on }">
-                            <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
-                        </template>
                         <v-card>
                             <v-form lazy-validation v-model="valid" ref="form">
 
@@ -164,19 +164,7 @@
             category_data: null,
             unit_data: null,
             search_category: "",
-            headers: [
-                {text: 'ID', value: 'id', groupable: false},
-                {text: 'Product', value: 'product', groupable: false},
-                {text: 'Unit', value: 'unit', groupable: false},
-                {text: 'Category', value: 'category', groupable: true},
-                {text: 'Quantity', value: 'quantity', groupable: false},
-                {text: 'Capacity', value: 'capacity', groupable: false},
-                {text: 'Reorder Level', value: 'reorder_level', groupable: false},
-                {text: 'Cost', value: 'cost', groupable: false},
-                {text: 'Needed', value: 'needed_at_store', groupable: false},
-                {text: 'Actions', value: 'actions', sortable: false, groupable: false},
-            ],
-            pagination: {},
+            search_product: "",
             dialog: false,
             current_inventory: {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null},
             valid: false,
@@ -189,6 +177,31 @@
             }
         },
         computed: {
+            headers() {
+                return [
+                    {text: 'ID', value: 'id', groupable: false},
+                    {text: 'Product', value: 'product', groupable: false},
+                    {text: 'Unit', value: 'unit', groupable: false},
+                    {
+                        text: 'Category', value: 'category', groupable: true,
+                        filter: value => {
+                            console.log(value)
+                            console.log(value == this.search_category)
+                            if (!this.search_category) {
+                                return true
+                            } else {
+                                return value == this.search_category
+                            }
+                        },
+                    },
+                    {text: 'Quantity', value: 'quantity', groupable: false},
+                    {text: 'Capacity', value: 'capacity', groupable: false},
+                    {text: 'Reorder Level', value: 'reorder_level', groupable: false},
+                    {text: 'Cost', value: 'cost', groupable: false},
+                    {text: 'Needed', value: 'needed_at_store', groupable: false},
+                    {text: 'Actions', value: 'actions', sortable: false, groupable: false},
+                ]
+            },
             formTitle() {
                 return this.current_inventory_id === -1 ? 'New Item' : 'Edit Item'
             },

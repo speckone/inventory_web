@@ -38,7 +38,7 @@
         </v-app-bar>
 
         <v-main>
-            <router-view/>
+            <router-view class="pt-5"/>
         </v-main>
         <AppSnackbar/>
     </v-app>
