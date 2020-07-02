@@ -9,6 +9,7 @@
                 :search="search_product"
                 fixed-header
                 height="600"
+                show-select
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
