@@ -7,9 +7,10 @@
                 group-by="category"
                 :sort-by="id"
                 :search="search_product"
+                fixed-header
         >
             <template v-slot:top>
-                <v-toolbar flat color="white" fixed>
+                <v-toolbar flat color="white">
                     <v-toolbar-title>Inventory</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
                     <v-text-field
