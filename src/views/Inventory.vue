@@ -8,7 +8,7 @@
                 :sort-by.sync="sortBy"
                 :search="search_product"
                 fixed-header
-                height="650"
+                height="750"
                 show-select
         >
             <template v-slot:top>
