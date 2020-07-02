@@ -5,7 +5,7 @@
                 :items="items"
                 item-key="product"
                 group-by="category"
-                :sort-by="id"
+                :sort-by.sync="sortBy"
                 :search="search_product"
                 fixed-header
                 height="600"
@@ -163,6 +163,7 @@
             SelectProduct
         },
         data: () => ({
+            sortBy: 'id',
             inventory_data: null,
             product_data: null,
             category_data: null,
