@@ -8,6 +8,7 @@
                 :sort-by="id"
                 :search="search_product"
                 fixed-header
+                height="600"
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
