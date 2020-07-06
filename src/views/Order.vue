@@ -17,7 +17,7 @@
                 </v-toolbar>
             </template>
             <template v-slot:item.actions="{ item }">
-                <v-tooltip left v-if="isNew(item.order_id)">
+                <v-tooltip left >
                     <template v-slot:activator="{ on }">
                         <v-icon small @click="deleteItem(item)" v-on="on">
                             mdi-delete
@@ -65,6 +65,30 @@
                         <span>Delete Order</span>
                     </v-tooltip>
                 </td>
+            </template>
+            <template v-slot:item.quantity="props">
+                <v-edit-dialog
+                        :return-value="props.item.quantity"
+                        large
+                        persistent
+                        @save="updateItemQuantity(props.item)"
+                        @cancel="close"
+                        @close="close"
+                >
+                    <div>{{ props.item.quantity }}</div>
+                    <template v-slot:input>
+                        <div class="mt-4 title">Update Quantity</div>
+                    </template>
+                    <template v-slot:input>
+                        <v-text-field
+                                v-model.number="props.item.quantity"
+                                :rules="[v => !!v || 'Quantity is required']"
+                                label="Edit"
+                                single-line
+                                autofocus
+                        ></v-text-field>
+                    </template>
+                </v-edit-dialog>
             </template>
 
         </v-data-table>
@@ -193,6 +217,18 @@
                             timeout: 2000
                         };
                         this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            updateItemQuantity: function (item, path = '/api/v1/orderitem') {
+                let body = {
+                    'quantity': item.quantity
+                }
+                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + item.id, body)
+                    .then(() => {
+                        this.getOrderItemData();
                     })
                     .catch(function (error) {
                         alert(error);
