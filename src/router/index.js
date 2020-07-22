@@ -15,6 +15,11 @@ Vue.use(VueRouter)
     component: () => import('../views/Order.vue')
   },
   {
+    path: '/order_history',
+    name: 'Order History',
+    component: () => import('../views/OrderHistory.vue')
+  },
+  {
     path: '/products',
     name: 'Products',
     component: () => import('../views/Product.vue')

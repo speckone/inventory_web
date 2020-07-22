@@ -86,7 +86,7 @@ _axios.interceptors.response.use(
                     })
             })
         }
-        if (error.status === 401 && originalRequest && originalRequest.__isRetryRequest) {
+        if (error.response.status === 401 && originalRequest && originalRequest.__isRetryRequest) {
             this.$store.dispatch('authentication/logout')
         }
         return Promise.reject(error);

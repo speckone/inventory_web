@@ -98,7 +98,7 @@
 <script>
 
     export default {
-        name: "Order",
+        name: "OrderHistory",
         data: () => ({
             product_data: null,
             order_data: null,
@@ -167,7 +167,7 @@
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.product_data = response.data))
             },
-            getOrderData: function (path = '/api/v1/order') {
+            getOrderData: function (path = '/api/v1/order?status=Received') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.order_data = response.data))
             },

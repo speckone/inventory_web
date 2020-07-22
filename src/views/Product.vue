@@ -33,6 +33,12 @@
                 >
                     mdi-delete
                 </v-icon>
+                <v-icon
+                        small
+                        @click="ph_open(item)"
+                >
+                    mdi-history
+                </v-icon>
             </template>
             <template v-slot:footer>
                 <v-toolbar flat color="white">
@@ -92,11 +98,34 @@
                             </v-form>
                         </v-card>
                     </v-dialog>
-
                 </v-toolbar>
             </template>
-
         </v-data-table>
+
+        <v-dialog class="mx-auto" max-width="500" v-model="product_history_dialog" @click:outside="ph_close">
+            <v-card>
+                <v-card-title>
+                    <span class="headline">Order history for {{product_history_name}}</span>
+                </v-card-title>
+                <v-simple-table>
+                    <template v-slot:default>
+                        <thead>
+                        <tr>
+                            <th class="text-left">Order ID</th>
+                            <th class="text-left">Date</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="item in product_history_data" :key="item.id">
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.date }}</td>
+                        </tr>
+                        </tbody>
+                    </template>
+                </v-simple-table>
+            </v-card>
+        </v-dialog>
+
     </div>
 </template>
 
@@ -114,6 +143,8 @@
         },
         data: () => ({
             product_data: null,
+            product_history_data: null,
+            product_history_name: "",
             unit_data: null,
             vendor_data: null,
             category_data: null,
@@ -129,6 +160,7 @@
             ],
             pagination: {},
             dialog: false,
+            product_history_dialog: false,
             current_product: {
                 'name': null,
                 'unit_price': null,
@@ -244,6 +276,10 @@
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.product_data = response.data))
             },
+            getProductHistoryData: function (item, path = '/api/v1/product/') {
+                this.axios.get(process.env.VUE_APP_BASE_URL + path + item.id + '/history')
+                    .then(response => (this.product_history_data = response.data))
+            },
             getUnitData: function (path = '/api/v1/unit') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.unit_data = response.data))
@@ -307,6 +343,14 @@
                     'vendor_id': null,
                     "category_id": null
                 }
+            },
+            ph_open(item) {
+                this.getProductHistoryData(item);
+                this.product_history_name = item.name;
+                this.product_history_dialog = true;
+            },
+            ph_close() {
+                this.product_history_dialog = false;
             },
             save() {
                 if (this.$refs.form.validate()) {

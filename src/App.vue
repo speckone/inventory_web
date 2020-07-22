@@ -68,6 +68,11 @@
                     router: 'orders'
                 },
                 {
+                    title: 'Order History',
+                    avatar: 'mdi-history',
+                    router: 'order_history'
+                },
+                {
                     title: 'Products',
                     avatar: 'mdi-archive-arrow-down',
                     router: 'products'
