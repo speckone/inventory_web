@@ -10,7 +10,7 @@
         >
             <template v-slot:top>
                 <v-toolbar flat color="white">
-                    <v-toolbar-title>Orders</v-toolbar-title>
+                    <v-toolbar-title>Active Orders</v-toolbar-title>
                     <v-divider class="mx-4" inset vertical/>
                     <v-spacer/>
 
@@ -62,7 +62,7 @@
                         <template v-slot:activator="{ on }">
                             <v-icon small @click="cancelOrder(group)" v-on="on">mdi-delete</v-icon>
                         </template>
-                        <span>Delete Order</span>
+                        <span>Cancel Order</span>
                     </v-tooltip>
                 </td>
             </template>
