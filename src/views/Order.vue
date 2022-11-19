@@ -60,7 +60,7 @@
                     ></v-divider>
                     <v-tooltip v-if="isNew(group)" right>
                         <template v-slot:activator="{ on }">
-                            <v-icon small @click="deleteOrder(group)" v-on="on">mdi-delete</v-icon>
+                            <v-icon small @click="cancelOrder(group)" v-on="on">mdi-delete</v-icon>
                         </template>
                         <span>Delete Order</span>
                     </v-tooltip>
@@ -167,7 +167,7 @@
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.product_data = response.data))
             },
-            getOrderData: function (path = '/api/v1/order') {
+            getOrderData: function (path = '/api/v1/order?status=New') {
                 this.axios.get(process.env.VUE_APP_BASE_URL + path)
                     .then(response => (this.order_data = response.data))
             },
@@ -214,6 +214,23 @@
                         let snackbar = {
                             show: true,
                             text: "Order received",
+                            color: 'success',
+                            timeout: 2000
+                        };
+                        this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
+                    })
+                    .catch(function (error) {
+                        alert(error);
+                    });
+            },
+            cancelOrder: function (order, path = '/api/v1/order') {
+                let body = {"status": "Cancelled"};
+                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
+                    .then(() => {
+                        this.getOrderData();
+                        let snackbar = {
+                            show: true,
+                            text: "Order cancelled",
                             color: 'success',
                             timeout: 2000
                         };
