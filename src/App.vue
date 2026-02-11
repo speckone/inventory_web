@@ -1,127 +1,89 @@
 <template>
-    <v-app>
-        <v-navigation-drawer v-model="drawer" app>
-            <v-list dense>
-                <v-list-item v-for="(item, i) in sidebar" :key="i"
-                             @click="item.router != null ? visitRoute(item.router) : visitUrl(item.link)">
-                    <v-list-item-action>
-                        <v-icon>{{ item.avatar }}</v-icon>
-                    </v-list-item-action>
-                    <v-list-item-content>
-                        <v-list-item-title>{{ item.title }}</v-list-item-title>
-                    </v-list-item-content>
-                </v-list-item>
-            </v-list>
-        </v-navigation-drawer>
+  <v-app>
+    <v-navigation-drawer v-model="drawer">
+      <v-list density="compact" nav>
+        <v-list-item
+          v-for="(item, i) in sidebar"
+          :key="i"
+          :prepend-icon="item.avatar"
+          :title="item.title"
+          @click="visitRoute(item.router)"
+        />
+      </v-list>
+    </v-navigation-drawer>
 
-        <v-app-bar app color="indigo" dark>
-            <v-app-bar-nav-icon @click.stop="drawer = !drawer"/>
-            <v-toolbar-title v-text="title"/>
-            <v-spacer></v-spacer>
-            <v-menu left v-if="loggedIn">
-                <template v-slot:activator="{ on }">
-                    <v-avatar color="indigo" v-on="on">
-                        <v-icon dark>mdi-account-circle</v-icon>
-                    </v-avatar>
-                    {{ userName }}
-                </template>
+    <v-app-bar color="indigo" dark>
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-toolbar-title>{{ title }}</v-toolbar-title>
+      <v-spacer />
+      <v-menu v-if="authStore.loggedIn">
+        <template #activator="{ props }">
+          <v-avatar color="indigo" v-bind="props">
+            <v-icon>mdi-account-circle</v-icon>
+          </v-avatar>
+          <span class="ml-2">{{ authStore.userName }}</span>
+        </template>
+        <v-list>
+          <v-list-item @click="logout">
+            <template #append>
+              <v-icon>mdi-export</v-icon>
+            </template>
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-app-bar>
 
-                <v-list>
-                    <v-list-item @click="logout">
-                        <v-list-item-title>Logout</v-list-item-title>
-                        <v-list-item-icon>
-                            <v-icon>mdi-export</v-icon>
-                        </v-list-item-icon>
-                    </v-list-item>
-                </v-list>
-            </v-menu>
-        </v-app-bar>
+    <v-main>
+      <router-view class="pt-5" />
+    </v-main>
 
-        <v-main>
-            <router-view class="pt-5"/>
-        </v-main>
-        <AppSnackbar/>
-    </v-app>
+    <AppSnackbar />
+    <ConfirmDialog />
+  </v-app>
 </template>
 
-<script>
-    import AppSnackbar from "./components/AppSnackbar";
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import AppSnackbar from '@/components/AppSnackbar.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
-    export default {
-        name: 'App',
-        components: {
-            AppSnackbar,
-        },
-        data: () => ({
-          drawer: false,
-          valid: false,
-          title: "Esso Inventory",
-          sidebar: [
-                {
-                    title: 'Inventory',
-                    avatar: 'mdi-home',
-                    router: '/'
-                },
-                {
-                    title: 'Orders',
-                    avatar: 'mdi-cart-arrow-down',
-                    router: 'orders'
-                },
-                {
-                    title: 'Order History',
-                    avatar: 'mdi-history',
-                    router: 'order_history'
-                },
-                {
-                    title: 'Products',
-                    avatar: 'mdi-archive-arrow-down',
-                    router: 'products'
-                },
-                {
-                    title: 'Categories',
-                    avatar: 'mdi-view-list',
-                    router: 'category'
-                },
-                {
-                    title: 'Vendors',
-                    avatar: 'mdi-store',
-                    router: 'vendors'
-                },
-                {
-                    title: 'Units',
-                    avatar: 'mdi-beaker',
-                    router: 'units'
-                },
-                {
-                    title: 'About',
-                    avatar: 'mdi-information',
-                    router: 'about'
-                },
-            ],
-        }),
-        computed: {
-            loggedIn() {
-                return this.$store.state.authentication.status.loggedIn;
-            },
-            userName() {
-                if (this.$store.state.authentication.user){
-                    return this.$store.state.authentication.user.name;
-                } else {
-                    return null
-                }
-            },
-        },
-        methods: {
-            visitUrl(u) {
-                window.open(u)
-            },
-            visitRoute(r) {
-                this.$router.push(r)
-            },
-            logout() {
-              this.$store.dispatch('authentication/logout')
-              this.$router.push('/login')
-            },
-        },
-    };
+const router = useRouter()
+const authStore = useAuthStore()
+
+const drawer = ref(false)
+const title = 'Esso Inventory'
+
+const allSidebarItems = [
+  { title: 'Inventory', avatar: 'mdi-home', router: '/' },
+  { title: 'Orders', avatar: 'mdi-cart-arrow-down', router: '/orders' },
+  { title: 'Order History', avatar: 'mdi-history', router: '/order_history' },
+  { title: 'Products', avatar: 'mdi-archive-arrow-down', router: '/products' },
+  { title: 'Categories', avatar: 'mdi-view-list', router: '/category' },
+  { title: 'Vendors', avatar: 'mdi-store', router: '/vendors' },
+  { title: 'Units', avatar: 'mdi-beaker', router: '/units' },
+  { title: 'Customers', avatar: 'mdi-account-group', router: '/customers', adminOnly: true },
+  { title: 'Invoices', avatar: 'mdi-receipt-text', router: '/invoices', adminOnly: true },
+  { title: 'About', avatar: 'mdi-information', router: '/about' },
+]
+
+const sidebar = computed(() => {
+  return allSidebarItems.filter(item => {
+    // Show all items to admin users
+    if (authStore.isAdmin) return true
+    // For non-admin users, hide admin-only items
+    return !item.adminOnly
+  })
+})
+
+function visitRoute(route: string) {
+  router.push(route)
+}
+
+function logout() {
+  authStore.logout()
+  router.push('/login')
+}
 </script>

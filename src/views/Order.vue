@@ -1,293 +1,229 @@
 <template>
-    <div>
-        <v-data-table
-                :headers="headers"
-                :items="items"
-                item-key="id"
-                group-by="order_id"
-                group-desc
-                dense
-        >
-            <template v-slot:top>
-                <v-toolbar flat color="white">
-                    <v-toolbar-title>Active Orders</v-toolbar-title>
-                    <v-divider class="mx-4" inset vertical/>
-                    <v-spacer/>
+  <div>
+    <v-data-table
+      :headers="headers"
+      :items="items"
+      item-value="id"
+      :group-by="[{ key: 'order_id', order: 'desc' }]"
+      density="compact"
+    >
+      <template v-slot:top>
+        <v-toolbar flat color="white">
+          <v-toolbar-title>Active Orders</v-toolbar-title>
+          <v-divider class="mx-4" inset vertical />
+          <v-spacer />
+        </v-toolbar>
+      </template>
 
-                </v-toolbar>
-            </template>
-            <template v-slot:item.actions="{ item }">
-                <v-tooltip left >
-                    <template v-slot:activator="{ on }">
-                        <v-icon small @click="deleteItem(item)" v-on="on">
-                            mdi-delete
-                        </v-icon>
-                    </template>
-                    <span>Remove item from order</span>
-                </v-tooltip>
+      <template v-slot:item.actions="{ item }">
+        <v-tooltip location="start">
+          <template #activator="{ props }">
+            <v-icon size="small" v-bind="props" @click="deleteItem(item)">
+              mdi-delete
+            </v-icon>
+          </template>
+          <span>Remove item from order</span>
+        </v-tooltip>
+      </template>
 
-            </template>
-            <template v-slot:group.header="{ group, headers }">
-                <th :colspan="headers.length">
-                    {{ getOrderStatus(group) }} Order: {{ group }} - {{ getOrderDate(group) }}
-                    <v-divider
-                            class="mx-8"
-                            inset
-                            vertical
-                    ></v-divider>
-                    Cost {{ getOrderCost(group) | currency }}
-                </th>
-            </template>
-            <template v-slot:group.summary="{ group, headers }">
-                <td :colspan="headers.length">
-                    <v-tooltip right v-if="isNew(group)">
-                        <template v-slot:activator="{ on }">
-                            <v-icon small @click="submitOrder(group)" v-on="on">mdi-send</v-icon>
-                        </template>
-                        <span>Submit order</span>
-                    </v-tooltip>
-                    <v-tooltip left v-if="isSubmitted(group)">
-                        <template v-slot:activator="{ on }">
-                            <v-icon small @click="receiveOrder(group)" v-on="on">mdi-check-circle</v-icon>
-                        </template>
-                        <span>Mark order as received</span>
-                    </v-tooltip>
-                    <v-divider
-                            v-if="isNew(group)"
-                            class="mx-8"
-                            inset
-                            vertical
-                    ></v-divider>
-                    <v-tooltip v-if="isNew(group)" right>
-                        <template v-slot:activator="{ on }">
-                            <v-icon small @click="cancelOrder(group)" v-on="on">mdi-delete</v-icon>
-                        </template>
-                        <span>Cancel Order</span>
-                    </v-tooltip>
-                </td>
-            </template>
-            <template v-slot:item.quantity="props">
-                <v-edit-dialog
-                        :return-value="props.item.quantity"
-                        large
-                        persistent
-                        @save="updateItemQuantity(props.item)"
-                        @cancel="close"
-                        @close="close"
-                >
-                    <div>{{ props.item.quantity }}</div>
-                    <template v-slot:input>
-                        <div class="mt-4 title">Update Quantity</div>
-                    </template>
-                    <template v-slot:input>
-                        <v-text-field
-                                v-model.number="props.item.quantity"
-                                :rules="[v => !!v || 'Quantity is required']"
-                                label="Edit"
-                                single-line
-                                autofocus
-                        ></v-text-field>
-                    </template>
-                </v-edit-dialog>
-            </template>
+      <template v-slot:group-header="{ item, columns, toggleGroup, isGroupOpen }">
+        <tr>
+          <td :colspan="columns.length">
+            <v-btn
+              size="small"
+              variant="text"
+              :icon="isGroupOpen(item) ? '$expand' : '$next'"
+              @click="toggleGroup(item)"
+            />
+            {{ getOrderStatus(item.value) }} Order: {{ item.value }} - {{ getOrderDate(item.value) }}
+            <v-divider class="mx-8" inset vertical />
+            Cost {{ formatCurrency(getOrderCost(item.value)) }}
 
-        </v-data-table>
-    </div>
+            <span class="ml-4">
+              <v-tooltip v-if="isNew(item.value)" location="end">
+                <template #activator="{ props }">
+                  <v-icon size="small" v-bind="props" @click="submitOrder(item.value)">mdi-send</v-icon>
+                </template>
+                <span>Submit order</span>
+              </v-tooltip>
+
+              <v-tooltip v-if="isSubmitted(item.value)" location="start">
+                <template #activator="{ props }">
+                  <v-icon size="small" v-bind="props" @click="receiveOrder(item.value)">mdi-check-circle</v-icon>
+                </template>
+                <span>Mark order as received</span>
+              </v-tooltip>
+
+              <v-divider v-if="isNew(item.value)" class="mx-4" inset vertical />
+
+              <v-tooltip v-if="isNew(item.value)" location="end">
+                <template #activator="{ props }">
+                  <v-icon size="small" v-bind="props" @click="cancelOrder(item.value)">mdi-delete</v-icon>
+                </template>
+                <span>Cancel Order</span>
+              </v-tooltip>
+            </span>
+          </td>
+        </tr>
+      </template>
+
+      <template v-slot:item.quantity="{ item }">
+        <EditableCell
+          :model-value="item.quantity"
+          label="Update Quantity"
+          :rules="[v => !!v || 'Quantity is required']"
+          @save="(val: number) => updateItemQuantity(item, val)"
+        />
+      </template>
+    </v-data-table>
+
+    <ConfirmDialog />
+  </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { productService } from '@/services/product.service'
+import { unitService } from '@/services/unit.service'
+import { orderService } from '@/services/order.service'
+import { orderItemService } from '@/services/orderItem.service'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { useSnackbarStore } from '@/stores/snackbar'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import EditableCell from '@/components/EditableCell.vue'
+import { formatCurrency } from '@/utils/formatters'
+import type { Product, Unit, Order, OrderItem } from '@/types/models'
 
-    export default {
-        name: "Order",
-        data: () => ({
-            product_data: null,
-            order_data: null,
-            order_item_data: null,
-            unit_data: null,
-            headers: [
-                {text: 'ID', value: 'id'},
-                {text: 'Quantity', value: 'quantity'},
-                {text: 'Product', value: 'product'},
-                {text: 'Actions', value: 'actions', sortable: false},
-            ],
-            pagination: {},
-            dialog: false,
-            valid: false,
-            snackbar: false,
-        }),
-        computed: {
-            items() {
-                if (this.order_data && this.order_item_data && this.product_data && this.unit_data) {
-                    let open_order_ids = this.order_data.map(order => order.id);
-                    return this.order_item_data.map(order_item => {
-                        const orderProduct = this.product_data.find(product => product.id == order_item.product_id)
-                        const productUnit = this.unit_data.find(unit => unit.id == orderProduct.unit_id)
-                        order_item.product = orderProduct.name;
-                        order_item.unit = productUnit.name;
-                        return order_item
-                    }).filter(order_item => open_order_ids.indexOf(order_item.order_id) >= 0)
-                } else {
-                    return []
-                }
-            }
-        },
-        mounted() {
-            this.getOrderData();
-            this.getProductData();
-            this.getOrderItemData();
-            this.getUnitData();
-        },
-        filters: {
-            currency: function (value) {
-                return '$' + parseFloat(value).toFixed(2);
-            }
-        },
-        methods: {
-            getOrderDate: function (order_id) {
-                const current_order = this.order_data.find(order => order.id == order_id)
-                return new Date(current_order.date).toLocaleString()
-            },
-            getOrderStatus: function (order_id) {
-                const current_order = this.order_data.find(order => order.id == order_id)
-                return current_order.status
-            },
-            getOrderCost: function (order_id) {
-                const current_order = this.order_data.find(order => order.id == order_id)
-                return current_order.cost
-            },
-            isNew: function (order_id) {
-                const current_order = this.order_data.find(order => order.id == order_id)
-                return current_order.status === 'New';
-            },
-            isSubmitted: function (order_id) {
-                const current_order = this.order_data.find(order => order.id == order_id)
-                return current_order.status === 'Submitted';
-            },
-            getProductData: function (path = '/api/v1/product') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.product_data = response.data))
-            },
-            getOrderData: function (path = '/api/v1/order?status=New') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.order_data = response.data))
-            },
-            getOrderItemData: function (path = '/api/v1/orderitem') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.order_item_data = response.data))
-            },
-            getUnitData: function (path = '/api/v1/unit') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.unit_data = response.data))
-            },
-            submitOrder: function (order, path = '/api/v1/order') {
-                this.$confirm('Send order to Sharon?', {
-                    icon: 'mdi-alert',
-                    buttonTrueText: 'Yes! Send my order.'
-                }).then(
-                    confirmed => {
-                        if (confirmed) {
-                            let body = {"status": "Submitted"};
-                            this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
-                                .then(() => {
-                                    this.getOrderData();
-                                    let snackbar = {
-                                        show: true,
-                                        text: "Order submitted",
-                                        color: 'success',
-                                        timeout: 2000
-                                    };
-                                    this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
-                                })
-                                .catch(function (error) {
-                                    alert(error);
-                                });
-                        }
-                    }
-                )
+const { confirm } = useConfirmDialog()
+const snackbarStore = useSnackbarStore()
 
-            },
-            receiveOrder: function (order, path = '/api/v1/order') {
-                let body = {"status": "Received"};
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
-                    .then(() => {
-                        this.getOrderData();
-                        let snackbar = {
-                            show: true,
-                            text: "Order received",
-                            color: 'success',
-                            timeout: 2000
-                        };
-                        this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            cancelOrder: function (order, path = '/api/v1/order') {
-                let body = {"status": "Cancelled"};
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + order, body)
-                    .then(() => {
-                        this.getOrderData();
-                        let snackbar = {
-                            show: true,
-                            text: "Order cancelled",
-                            color: 'success',
-                            timeout: 2000
-                        };
-                        this.$store.dispatch('appSnackbar/setSnackbar', snackbar);
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            updateItemQuantity: function (item, path = '/api/v1/orderitem') {
-                let body = {
-                    'quantity': item.quantity
-                }
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + item.id, body)
-                    .then(() => {
-                        this.getOrderItemData();
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            deleteItem: function (order_item, path = '/api/v1/orderitem') {
-                this.$confirm('Delete Order Item: ' + order_item.product + '?', {icon: 'mdi-alert'}).then(
-                    confirmed => {
-                        if (confirmed) {
-                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + order_item.id)
-                                .then(() => {
-                                    this.getOrderItemData();
-                                })
-                                .catch(error => {
-                                    alert(error);
-                                });
-                        }
-                    }
-                )
-            },
-            deleteOrder: function (order_id, path = '/api/v1/order') {
-                this.$confirm('Delete Order: ' + order_id + '?', {icon: 'mdi-alert'}).then(
-                    confirmed => {
-                        if (confirmed) {
-                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + order_id)
-                                .then(() => {
-                                    this.getOrderItemData();
-                                    this.getOrderData();
-                                })
-                                .catch(error => {
-                                    alert(error);
-                                });
-                        }
-                    }
-                )
-            },
+const productData = ref<Product[]>([])
+const orderData = ref<Order[]>([])
+const orderItemData = ref<OrderItem[]>([])
+const unitData = ref<Unit[]>([])
 
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Quantity', key: 'quantity' },
+  { title: 'Product', key: 'product' },
+  { title: 'Actions', key: 'actions', sortable: false },
+]
+
+const items = computed(() => {
+  if (orderData.value && orderItemData.value && productData.value && unitData.value) {
+    const openOrderIds = orderData.value.map((order) => order.id)
+    return orderItemData.value
+      .map((orderItem) => {
+        const orderProduct = productData.value.find((p) => p.id === orderItem.product_id)
+        const productUnit = orderProduct
+          ? unitData.value.find((u) => u.id === orderProduct.unit_id)
+          : undefined
+        return {
+          ...orderItem,
+          product: orderProduct?.name ?? '',
+          unit: productUnit?.name ?? '',
         }
-    }
+      })
+      .filter((orderItem) => openOrderIds.includes(orderItem.order_id))
+  }
+  return []
+})
+
+function getOrderDate(orderId: number): string {
+  const order = orderData.value.find((o) => o.id === orderId)
+  return order ? new Date(order.date).toLocaleString() : ''
+}
+
+function getOrderStatus(orderId: number): string {
+  const order = orderData.value.find((o) => o.id === orderId)
+  return order?.status ?? ''
+}
+
+function getOrderCost(orderId: number): number {
+  const order = orderData.value.find((o) => o.id === orderId)
+  return order?.cost ?? 0
+}
+
+function isNew(orderId: number): boolean {
+  const order = orderData.value.find((o) => o.id === orderId)
+  return order?.status === 'New'
+}
+
+function isSubmitted(orderId: number): boolean {
+  const order = orderData.value.find((o) => o.id === orderId)
+  return order?.status === 'Submitted'
+}
+
+async function loadOrders() {
+  orderData.value = await orderService.getByStatus('New')
+}
+
+async function loadOrderItems() {
+  orderItemData.value = await orderItemService.getAll()
+}
+
+async function loadData() {
+  orderData.value = await orderService.getByStatus('New')
+  productData.value = await productService.getAll()
+  orderItemData.value = await orderItemService.getAll()
+  unitData.value = await unitService.getAll()
+}
+
+async function submitOrder(orderId: number) {
+  const confirmed = await confirm('Send order to Sharon?', {
+    icon: 'mdi-alert',
+    buttonTrueText: 'Yes! Send my order.',
+  })
+  if (confirmed) {
+    await orderService.updateStatus(orderId, 'Submitted')
+    await loadOrders()
+    snackbarStore.showSnackbar({
+      show: true,
+      text: 'Order submitted',
+      color: 'success',
+      timeout: 2000,
+    })
+  }
+}
+
+async function receiveOrder(orderId: number) {
+  await orderService.updateStatus(orderId, 'Received')
+  await loadOrders()
+  snackbarStore.showSnackbar({
+    show: true,
+    text: 'Order received',
+    color: 'success',
+    timeout: 2000,
+  })
+}
+
+async function cancelOrder(orderId: number) {
+  await orderService.updateStatus(orderId, 'Cancelled')
+  await loadOrders()
+  snackbarStore.showSnackbar({
+    show: true,
+    text: 'Order cancelled',
+    color: 'success',
+    timeout: 2000,
+  })
+}
+
+async function updateItemQuantity(item: OrderItem, quantity: number) {
+  await orderItemService.updateQuantity(item.id, quantity)
+  await loadOrderItems()
+}
+
+async function deleteItem(orderItem: OrderItem) {
+  const confirmed = await confirm('Delete Order Item: ' + orderItem.product + '?', {
+    icon: 'mdi-alert',
+  })
+  if (confirmed) {
+    await orderItemService.delete(orderItem.id)
+    await loadOrderItems()
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
-
-<style scoped>
-
-</style>
