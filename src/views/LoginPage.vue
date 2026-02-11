@@ -16,18 +16,18 @@
           prepend-icon="mdi-lock"
           type="password"
         />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="primary"
+            type="submit"
+            :disabled="authStore.status.loggingIn"
+            :loading="authStore.status.loggingIn"
+          >
+            Login
+          </v-btn>
+        </v-card-actions>
       </v-form>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          color="primary"
-          :disabled="authStore.status.loggingIn"
-          :loading="authStore.status.loggingIn"
-          @click="handleSubmit"
-        >
-          Login
-        </v-btn>
-      </v-card-actions>
     </v-card-text>
   </div>
 </template>
