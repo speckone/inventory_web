@@ -1,30 +1,21 @@
 <template>
   <v-snackbar
-    v-model="snackbar.show"
-    :color="snackbar.color"
-    :timeout="snackbar.timeout"
-    right
-    top
+    v-model="snackbarStore.show"
+    :color="snackbarStore.color"
+    :timeout="snackbarStore.timeout"
+    location="top right"
   >
-    {{ snackbar.text }}
-    <v-btn
-      fab
-      small
-      text
-      @click="snackbar.show = false"
-    >
-      <v-icon>mdi-close</v-icon>
-    </v-btn>
+    {{ snackbarStore.text }}
+    <template #actions>
+      <v-btn icon size="small" variant="text" @click="snackbarStore.hide()">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+    </template>
   </v-snackbar>
 </template>
 
-<script>
-  export default {
-    data: () => ({}),
-    computed: {
-        snackbar() {
-            return this.$store.getters['appSnackbar/getSnackbar']
-        },
-    }
-  }
+<script setup lang="ts">
+import { useSnackbarStore } from '@/stores/snackbar'
+
+const snackbarStore = useSnackbarStore()
 </script>

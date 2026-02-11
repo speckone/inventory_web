@@ -1,421 +1,296 @@
 <template>
-    <div>
-        <v-data-table
-                :headers="headers"
-                :items="items"
-                item-key="product"
-                group-by="category"
-                :sort-by.sync="sortBy"
-                :search="search_product"
-                fixed-header
-                height="700"
-                show-select
-        >
-            <template v-slot:top>
-                <v-toolbar flat color="white">
-                    <v-toolbar-title>Inventory</v-toolbar-title>
-                    <v-divider class="mx-4" inset vertical/>
-                    <v-text-field
-                            v-model="search_product"
-                            append-icon="mdi-magnify"
-                            label="Search"
-                    ></v-text-field>
-                    <v-spacer/>
-                    <v-select
-                            :items="categories"
-                            label="Category"
-                            v-model="search_category"
-                            clearable
-                    ></v-select>
-                </v-toolbar>
+  <div>
+    <v-data-table
+      :headers="headers"
+      :items="items"
+      item-value="id"
+      :group-by="[{ key: 'category' }]"
+      :sort-by="[{ key: 'id' }]"
+      :search="searchProduct"
+      :custom-filter="filterByCategory"
+      fixed-header
+      height="700"
+      show-select
+    >
+      <template #top>
+        <v-toolbar flat>
+          <v-toolbar-title>Inventory</v-toolbar-title>
+          <v-divider class="mx-4" inset vertical />
+          <v-text-field v-model="searchProduct" append-icon="mdi-magnify" label="Search" />
+          <v-spacer />
+          <v-select :items="categoryNames" label="Category" v-model="searchCategory" clearable />
+        </v-toolbar>
+      </template>
+      <template #item.cost="{ item }">
+        {{ formatCurrency(item.cost) }}
+      </template>
+      <template #item.quantity="{ item }">
+        <EditableCell
+          :model-value="item.quantity"
+          label="Update Quantity"
+          :rules="[v => !!v || 'Quantity is required']"
+          @save="(val) => updateItemQuantity(item, val)"
+        />
+      </template>
+      <template #item.actions="{ item }">
+        <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
+        <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+      </template>
+      <template #bottom>
+        <v-toolbar flat>
+          <v-spacer />
+          <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+            <template #activator="{ props: activatorProps }">
+              <v-btn color="primary" class="mb-2 mr-2" v-bind="activatorProps">New Item</v-btn>
             </template>
-            <template v-slot:item.cost="{ item }">
-                {{ item.cost | currency }}
-            </template>
-
-            <template v-slot:footer>
-                <v-toolbar flat color="white">
-                    <v-spacer/>
-                    <v-dialog class="mx-auto" max-width="500" v-model="dialog" @click:outside="close">
-                        <v-card>
-                            <v-form lazy-validation v-model="valid" ref="form">
-
-                                <v-card-title>
-                                    <span class="headline">{{ formTitle }}</span>
-                                </v-card-title>
-                                <SelectProduct :selected_id.sync="current_product_id"/>
-
-                                <v-card-text>
-                                    <v-container>
-                                        <v-row>
-                                            <v-col cols="12">
-                                                <v-text-field
-                                                        label="Quantity"
-                                                        v-model.number="current_quantity"
-                                                        :rules="[v => !!v || 'Quantity is required']"
-                                                />
-                                            </v-col>
-                                        </v-row>
-                                    </v-container>
-                                </v-card-text>
-
-                                <v-card-text>
-                                    <v-container>
-                                        <v-row>
-                                            <v-col cols="12">
-                                                <v-text-field
-                                                        label="Capacity"
-                                                        v-model.number="current_capacity"
-                                                        :rules="[v => !!v || 'Capacity is required']"
-                                                />
-                                            </v-col>
-                                        </v-row>
-                                    </v-container>
-                                </v-card-text>
-
-                                <v-card-text>
-                                    <v-container>
-                                        <v-row>
-                                            <v-col cols="12">
-                                                <v-text-field
-                                                        label="Reorder Level"
-                                                        v-model.number="current_reorder_level"
-                                                        :rules="[v => !!v || 'Reorder Level is required']"
-                                                />
-                                            </v-col>
-                                        </v-row>
-                                    </v-container>
-                                </v-card-text>
-
-                                <v-card-actions>
-                                    <v-spacer></v-spacer>
-                                    <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
-                                    <v-btn color="blue darken-1" text @click="save">Save</v-btn>
-                                </v-card-actions>
-                                <v-snackbar
-                                        v-model="snackbar"
-                                        :timeout=1500
-                                        color="success"
-                                >Site updated
-                                </v-snackbar>
-                            </v-form>
-                        </v-card>
-                    </v-dialog>
-                    <v-btn color="primary" dark class="mb-2" @click="createOrder">Create Order</v-btn>
-
-                </v-toolbar>
-            </template>
-            <template v-slot:item.actions="{ item }">
-                <v-icon
-                        small
-                        class="mr-2"
-                        @click="editItem(item)"
-                >
-                    mdi-pencil
-                </v-icon>
-                <v-icon
-                        small
-                        @click="deleteItem(item)"
-                >
-                    mdi-delete
-                </v-icon>
-            </template>
-            <template v-slot:group.header="{ group, headers }">
-                <th :colspan="headers.length">
-                    {{ group }}
-                </th>
-            </template>
-            <template v-slot:item.quantity="props">
-                <v-edit-dialog
-                        :return-value="props.item.quantity"
-                        large
-                        persistent
-                        @save="updateItemQuantity(props.item)"
-                        @cancel="close"
-                        @close="close"
-                >
-                    <div>{{ props.item.quantity }}</div>
-                    <template v-slot:input>
-                        <div class="mt-4 title">Update Quantity</div>
-                    </template>
-                    <template v-slot:input>
-                        <v-text-field
-                                v-model.number="props.item.quantity"
-                                :rules="[v => !!v || 'Quantity is required']"
-                                label="Edit"
-                                single-line
-                                autofocus
-                        ></v-text-field>
-                    </template>
-                </v-edit-dialog>
-            </template>
-
-        </v-data-table>
-    </div>
+            <v-card>
+              <v-form v-model="valid" ref="formRef">
+                <v-card-title>
+                  <span class="text-h5">{{ formTitle }}</span>
+                </v-card-title>
+                <EntitySelect
+                  v-model="currentItem.product_id"
+                  label="Product"
+                  :load-items="productService.getAll"
+                  :rules="[v => !!v || 'Product is required']"
+                />
+                <v-card-text>
+                  <v-container>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-text-field label="Quantity" v-model.number="currentItem.quantity" :rules="[v => !!v || 'Quantity is required']" />
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-text-field label="Capacity" v-model.number="currentItem.capacity" :rules="[v => !!v || 'Capacity is required']" />
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12">
+                        <v-text-field label="Reorder Level" v-model.number="currentItem.reorder_level" :rules="[v => !!v || 'Reorder Level is required']" />
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn color="blue-darken-1" variant="text" @click="close">Cancel</v-btn>
+                  <v-btn color="blue-darken-1" variant="text" @click="save">Save</v-btn>
+                </v-card-actions>
+              </v-form>
+            </v-card>
+          </v-dialog>
+          <v-btn color="primary" class="mb-2" @click="createOrder">Create Order</v-btn>
+        </v-toolbar>
+      </template>
+    </v-data-table>
+    <v-snackbar v-model="snackbar" :timeout="1500" color="success">Item updated</v-snackbar>
+  </div>
 </template>
 
-<script>
-    import SelectProduct from "../components/SelectProduct";
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import type { InventoryItem, Product, Category, Unit } from '@/types/models'
+import { inventoryService } from '@/services/inventory.service'
+import { productService } from '@/services/product.service'
+import { categoryService } from '@/services/category.service'
+import { unitService } from '@/services/unit.service'
+import { orderService } from '@/services/order.service'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { formatCurrency } from '@/utils/formatters'
+import EditableCell from '@/components/EditableCell.vue'
+import EntitySelect from '@/components/EntitySelect.vue'
 
-    export default {
-        name: "inventory",
-        components: {
-            SelectProduct
-        },
-        data: () => ({
-            sortBy: 'id',
-            inventory_data: null,
-            product_data: null,
-            category_data: null,
-            unit_data: null,
-            search_category: "",
-            search_product: "",
-            dialog: false,
-            current_inventory: {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null},
-            valid: false,
-            snackbar: false,
-            current_inventory_id: -1
-        }),
-        filters: {
-            currency: function (value) {
-                return '$' + parseFloat(value).toFixed(2);
-            }
-        },
-        computed: {
-            headers() {
-                return [
-                    {text: 'ID', value: 'id', groupable: false},
-                    {text: 'Product', value: 'product', groupable: false},
-                    {text: 'Unit', value: 'unit', groupable: false},
-                    {
-                        text: 'Category', value: 'category', groupable: true,
-                        filter: value => {
-                            console.log(value)
-                            console.log(value == this.search_category)
-                            if (!this.search_category) {
-                                return true
-                            } else {
-                                return value == this.search_category
-                            }
-                        },
-                    },
-                    {text: 'Quantity', value: 'quantity', groupable: false},
-                    {text: 'Capacity', value: 'capacity', groupable: false},
-                    {text: 'Reorder Level', value: 'reorder_level', groupable: false},
-                    {text: 'Cost', value: 'cost', groupable: false},
-                    {text: 'Needed', value: 'needed_at_store', groupable: false},
-                    {text: 'Actions', value: 'actions', sortable: false, groupable: false},
-                ]
-            },
-            formTitle() {
-                return this.current_inventory_id === -1 ? 'New Item' : 'Edit Item'
-            },
-            current_product_id: {
-                get: function () {
-                    if (this.current_inventory) {
-                        return this.current_inventory.product_id
-                    } else {
-                        return null
-                    }
-                },
-                set: function (new_value) {
-                    this.current_inventory.product_id = new_value
-                }
-            },
-            current_quantity: {
-                get: function () {
-                    if (this.current_inventory) {
-                        return this.current_inventory.quantity
-                    } else {
-                        return null
-                    }
-                },
-                set: function (new_value) {
-                    this.current_inventory.quantity = new_value
-                }
-            },
-            current_capacity: {
-                get: function () {
-                    if (this.current_inventory) {
-                        return this.current_inventory.capacity
-                    } else {
-                        return null
-                    }
-                },
-                set: function (new_value) {
-                    this.current_inventory.capacity = new_value
-                }
-            },
-            current_reorder_level: {
-                get: function () {
-                    if (this.current_inventory) {
-                        return this.current_inventory.reorder_level
-                    } else {
-                        return null
-                    }
-                },
-                set: function (new_value) {
-                    this.current_inventory.reorder_level = new_value
-                }
-            },
-            inventory_body() {
-                return {
-                    "product_id": this.current_product_id,
-                    "quantity": this.current_quantity,
-                    "capacity": this.current_capacity,
-                    "reorder_level": this.current_reorder_level
-                }
-            },
-            items() {
-                if (this.inventory_data && this.product_data && this.category_data && this.unit_data) {
-                    return this.inventory_data.map(inventory => {
-                        const inventoryProduct = this.product_data.find(product => product.id == inventory.product_id)
-                        const inventoryCategory = this.category_data.find(category => category.id == inventoryProduct.category_id)
-                        const inventoryUnit = this.unit_data.find(unit => unit.id == inventoryProduct.unit_id)
-                        inventory.unit = inventoryUnit.name
-                        inventory.product = inventoryProduct.name
-                        if (inventoryCategory === undefined) {
-                            inventory.category = "Null"
-                        } else {
-                            inventory.category = inventoryCategory.name
-                        }
-                        return inventory
-                    })
-                } else {
-                    return []
-                }
-            },
-            categories() {
-                if (this.category_data) {
-                    return this.category_data.map(category => {
-                        return category.name
-                    })
-                } else {
-                    return []
-                }
-            }
-        },
-        mounted() {
-            this.getUnitData();
-            this.getProductData();
-            this.getinventoryData();
-            this.getCategoryData();
-        },
-        methods: {
-            getinventoryData: function (path = '/api/v1/inventory') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.inventory_data = response.data))
-            },
-            getProductData: function (path = '/api/v1/product') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.product_data = response.data))
-            },
-            getCategoryData: function (path = '/api/v1/category') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.category_data = response.data))
-            },
-            getUnitData: function (path = '/api/v1/unit') {
-                this.axios.get(process.env.VUE_APP_BASE_URL + path)
-                    .then(response => (this.unit_data = response.data))
-            },
-            updateItem: function (path = '/api/v1/inventory') {
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + this.current_inventory_id, this.inventory_body)
-                    .then(() => {
-                        this.getinventoryData();
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            updateItemQuantity: function (item, path = '/api/v1/inventory') {
-                let body = {
-                    'quantity': item.quantity
-                }
-                this.axios.put(process.env.VUE_APP_BASE_URL + path + '/' + item.id, body)
-                    .then(() => {
-                        this.getinventoryData();
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            addItem: function (path = '/api/v1/inventory') {
-                this.axios.post(process.env.VUE_APP_BASE_URL + path, this.inventory_body)
-                    .then(() => {
-                        this.getinventoryData();
-                    })
-                    .catch(function (error) {
-                        alert(error);
-                    });
-            },
-            createOrder: function (order, path = '/api/v1/order') {
-                this.$confirm('Completed inventory?', {
-                    icon: 'mdi-alert',
-                    buttonTrueText: 'Yes! Create my order.'
-                }).then(
-                    confirmed => {
-                        if (confirmed) {
-                            let url = process.env.VUE_APP_BASE_URL + path
-                            console.log(url)
-                            console.log(order)
-                            this.axios.post(url)
-                                .then(() => {
-                                    this.$router.push('/orders')
-                                })
-                                .catch(function (error) {
-                                    alert(error);
-                                });
-                        }
-                    }
-                )
-            },
-            deleteItem: function (inventory, path = '/api/v1/inventory') {
-                this.$confirm('Delete inventory: ' + inventory.name + '?', {icon: 'mdi-alert'}).then(
-                    confirmed => {
-                        if (confirmed) {
-                            this.axios.delete(process.env.VUE_APP_BASE_URL + path + '/' + inventory.id)
-                                .then(() => {
-                                    this.getinventoryData();
-                                })
-                                .catch(error => {
-                                    alert(error);
-                                });
-                        }
-                    }
-                )
+const router = useRouter()
+const { confirm } = useConfirmDialog()
 
-            },
-            editItem(item) {
-                this.current_inventory = Object.assign({}, item);
-                this.current_inventory_id = item.id;
-                this.dialog = true;
-            },
-            close() {
-                this.dialog = false;
-                if (this.$refs.form) {
-                    this.$refs.form.reset();
-                }
-                this.current_inventory_id = -1;
-                this.current_inventory = {'product_id': null, 'capacity': null, 'reorder_level': null, 'quantity': null}
-            },
-            save() {
-                if (this.$refs.form.validate()) {
-                    if (this.current_inventory_id > -1) {
-                        this.updateItem();
-                    } else {
-                        this.addItem();
-                    }
-                    setTimeout(() => {
-                        this.close()
-                    }, 300)
-                }
-            },
+const inventoryItems = ref<InventoryItem[]>([])
+const products = ref<Product[]>([])
+const categories = ref<Category[]>([])
+const units = ref<Unit[]>([])
 
-        },
+const dialog = ref(false)
+const valid = ref(false)
+const formRef = ref()
+const snackbar = ref(false)
+const searchProduct = ref('')
+const searchCategory = ref<string | null>(null)
+const editedIndex = ref(-1)
 
+const defaultItem: Partial<InventoryItem> = {
+  quantity: 0,
+  capacity: 0,
+  reorder_level: 0,
+}
+
+const currentItem = ref<Partial<InventoryItem>>({ ...defaultItem })
+
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Product', key: 'product' },
+  { title: 'Unit', key: 'unit' },
+  { title: 'Category', key: 'category' },
+  { title: 'Quantity', key: 'quantity' },
+  { title: 'Capacity', key: 'capacity' },
+  { title: 'Reorder Level', key: 'reorder_level' },
+  { title: 'Cost', key: 'cost' },
+  { title: 'Needed', key: 'needed_at_store' },
+  { title: 'Actions', key: 'actions', sortable: false },
+]
+
+const items = computed(() => {
+  const productMap = new Map(products.value.map((p) => [p.id, p]))
+  const categoryMap = new Map(categories.value.map((c) => [c.id, c]))
+  const unitMap = new Map(units.value.map((u) => [u.id, u]))
+
+  let result = inventoryItems.value.map((inv) => {
+    const product = productMap.get(inv.product_id)
+    const category = product ? categoryMap.get(product.category_id) : undefined
+    const unit = product ? unitMap.get(product.unit_id) : undefined
+    return {
+      ...inv,
+      product: product?.name ?? '',
+      category: category?.name ?? 'Null',
+      unit: unit?.name ?? '',
+      cost: product ? product.unit_price * inv.quantity : 0,
     }
+  })
+
+  if (searchCategory.value) {
+    result = result.filter((item) => item.category === searchCategory.value)
+  }
+
+  return result
+})
+
+const categoryNames = computed(() => {
+  return categories.value.map((c) => c.name)
+})
+
+const formTitle = computed(() => {
+  return editedIndex.value === -1 ? 'New Item' : 'Edit Item'
+})
+
+function filterByCategory(value: string, query: string, item?: { raw: Record<string, unknown> }): boolean {
+  if (!query) return true
+  const productName = item?.raw?.product as string | undefined
+  if (!productName) return false
+  return productName.toLowerCase().includes(query.toLowerCase())
+}
+
+async function loadData() {
+  try {
+    const [inv, prod, cat, un] = await Promise.all([
+      inventoryService.getAll(),
+      productService.getAll(),
+      categoryService.getAll(),
+      unitService.getAll(),
+    ])
+    inventoryItems.value = inv
+    products.value = prod
+    categories.value = cat
+    units.value = un
+  } catch (error) {
+    console.error('Failed to load inventory data:', error)
+  }
+}
+
+function editItem(item: InventoryItem & { product: string; category: string; unit: string }) {
+  editedIndex.value = inventoryItems.value.findIndex((i) => i.id === item.id)
+  currentItem.value = {
+    id: item.id,
+    product_id: item.product_id,
+    quantity: item.quantity,
+    capacity: item.capacity,
+    reorder_level: item.reorder_level,
+  }
+  dialog.value = true
+}
+
+async function deleteItem(item: InventoryItem) {
+  const confirmed = await confirm('Are you sure you want to delete this item?', {
+    title: 'Delete Item',
+    icon: 'mdi-alert',
+    buttonTrueText: 'Delete',
+  })
+  if (confirmed) {
+    try {
+      await inventoryService.delete(item.id)
+      const index = inventoryItems.value.findIndex((i) => i.id === item.id)
+      if (index > -1) {
+        inventoryItems.value.splice(index, 1)
+      }
+    } catch (error) {
+      console.error('Failed to delete item:', error)
+    }
+  }
+}
+
+function close() {
+  dialog.value = false
+  editedIndex.value = -1
+  currentItem.value = { ...defaultItem }
+  formRef.value?.reset()
+}
+
+async function save() {
+  if (!valid.value) return
+  try {
+    if (editedIndex.value > -1) {
+      const updated = await inventoryService.update(currentItem.value.id!, {
+        product_id: currentItem.value.product_id,
+        quantity: currentItem.value.quantity,
+        capacity: currentItem.value.capacity,
+        reorder_level: currentItem.value.reorder_level,
+      })
+      inventoryItems.value.splice(editedIndex.value, 1, updated)
+    } else {
+      const created = await inventoryService.create({
+        product_id: currentItem.value.product_id,
+        quantity: currentItem.value.quantity,
+        capacity: currentItem.value.capacity,
+        reorder_level: currentItem.value.reorder_level,
+      })
+      inventoryItems.value.push(created)
+    }
+    snackbar.value = true
+    close()
+  } catch (error) {
+    console.error('Failed to save item:', error)
+  }
+}
+
+async function updateItemQuantity(item: InventoryItem, quantity: number) {
+  try {
+    const updated = await inventoryService.update(item.id, { quantity })
+    const index = inventoryItems.value.findIndex((i) => i.id === item.id)
+    if (index > -1) {
+      inventoryItems.value[index] = updated
+    }
+    snackbar.value = true
+  } catch (error) {
+    console.error('Failed to update quantity:', error)
+  }
+}
+
+async function createOrder() {
+  const confirmed = await confirm('Completed inventory?', {
+    icon: 'mdi-alert',
+    buttonTrueText: 'Yes! Create my order.',
+  })
+  if (confirmed) {
+    try {
+      await orderService.create()
+      router.push('/orders')
+    } catch (error) {
+      console.error('Failed to create order:', error)
+    }
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
-
-<style scoped>
-
-</style>
