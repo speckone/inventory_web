@@ -250,8 +250,8 @@
         <!-- Header -->
         <div class="d-flex justify-space-between mb-6">
           <div>
-            <div class="text-h5 font-weight-bold font-italic">Esso Coffeehouse</div>
-            <div class="text-body-2 mt-2">4700 N 12th St #107</div>
+            <img :src="essoCoffeeLogo" alt="Esso Coffee" style="height: 40px;" class="mb-2" />
+            <div class="text-body-2">4700 N 12th St #107</div>
             <div class="text-body-2">Phoenix, AZ 85014</div>
             <div class="text-body-2">Phone: 480.560.3067</div>
           </div>
@@ -327,6 +327,7 @@ import EntitySelect from '@/components/EntitySelect.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import type { Invoice, InvoiceItem, Customer } from '@/types/models'
+import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
 
 const { confirm } = useConfirmDialog()
 
@@ -493,32 +494,52 @@ async function deleteItem(invoice: Invoice) {
   }
 }
 
-function exportInvoicePdf(item: Invoice) {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+async function exportInvoicePdf(item: Invoice) {
   const customer = customerData.value.find((c) => c.id === item.customer_id)
   const lineItems = allInvoiceItems.value.filter((i) => i.invoice_id === item.id)
 
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Header — Business name
-  doc.setFontSize(18)
-  doc.setFont('helvetica', 'bolditalic')
-  doc.text('Esso Coffeehouse', 14, 22)
+  // Logo
+  let headerBottom = 40
+  try {
+    const logoImg = await loadImage(essoCoffeeLogo)
+    const logoHeight = 14
+    const logoWidth = (logoImg.width / logoImg.height) * logoHeight
+    doc.addImage(logoImg, 'PNG', 14, 10, logoWidth, logoHeight)
+    headerBottom = 28
+  } catch {
+    // If logo fails to load, fall back to text header
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bolditalic')
+    doc.text('Esso Coffeehouse', 14, 22)
+    headerBottom = 28
+  }
 
   // Business address
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.text('4700 N 12th St #107', 14, 30)
-  doc.text('Phoenix, AZ 85014', 14, 35)
-  doc.text('Phone: 480.560.3067', 14, 40)
+  doc.text('4700 N 12th St #107', 14, headerBottom)
+  doc.text('Phoenix, AZ 85014', 14, headerBottom + 5)
+  doc.text('Phone: 480.560.3067', 14, headerBottom + 10)
 
   // Invoice number
   doc.setFontSize(14)
   doc.setFont('helvetica', 'normal')
-  doc.text(`INVOICE # ${item.invoice_number}`, pageWidth - 14, 22, { align: 'right' })
+  doc.text(`INVOICE # ${item.invoice_number}`, pageWidth - 14, 18, { align: 'right' })
 
   // Bill To
-  let billY = 52
+  let billY = headerBottom + 22
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bolditalic')
   doc.text('BILL TO:', 14, billY)
