@@ -14,7 +14,9 @@
           label="Password"
           name="password"
           prepend-icon="mdi-lock"
-          type="password"
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="showPassword = !showPassword"
         />
         <v-card-actions>
           <v-spacer />
@@ -39,6 +41,7 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const username = ref('')
 const password = ref('')
+const showPassword = ref(false)
 
 onMounted(() => {
   authStore.logout()

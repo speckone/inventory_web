@@ -13,6 +13,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    fs: {
+      allow: ['../../../'],
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
