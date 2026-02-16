@@ -609,7 +609,8 @@ async function exportInvoicePdf(item: Invoice) {
   doc.setFont('helvetica', 'bold')
   doc.text(item.subtotal != null ? formatCurrency(item.subtotal) : '$0.00', totalsX, finalY + 10, { align: 'right' })
 
-  doc.save(`invoice_${item.invoice_number}.pdf`)
+  const customerSlug = customer ? customer.name.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase() : 'unknown'
+  doc.save(`invoice_${item.invoice_number}_${customerSlug}.pdf`)
 }
 
 function viewInvoice(item: Invoice) {
