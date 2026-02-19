@@ -8,7 +8,7 @@ export const orderService = {
   },
 
   async create(): Promise<Order> {
-    const { data } = await api.post('/api/v1/order')
+    const { data } = await api.post('/api/v1/order', {})
     return data
   },
 
