@@ -4,10 +4,10 @@
       :headers="headers"
       :items="items"
       item-value="id"
-      :group-by="[{ key: 'category' }]"
       :sort-by="[{ key: 'id' }]"
       :search="searchProduct"
       :custom-filter="filterByCategory"
+      v-model:items-per-page="itemsPerPage"
       fixed-header
       height="700"
       show-select
@@ -38,6 +38,15 @@
       </template>
       <template #bottom>
         <v-toolbar flat>
+          <v-select
+            v-model="itemsPerPage"
+            :items="[10, 25, 50, 100, { title: 'All', value: -1 }]"
+            label="Items per page"
+            density="compact"
+            hide-details
+            style="max-width: 140px"
+            class="ml-2"
+          />
           <v-spacer />
           <v-dialog v-model="dialog" max-width="500" @click:outside="close">
             <template #activator="{ props: activatorProps }">
@@ -117,6 +126,7 @@ const formRef = ref()
 const snackbar = ref(false)
 const searchProduct = ref('')
 const searchCategory = ref<string | null>(null)
+const itemsPerPage = ref(10)
 const editedIndex = ref(-1)
 
 const defaultItem: Partial<InventoryItem> = {
