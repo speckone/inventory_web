@@ -3,8 +3,8 @@ import type { Product, Order } from '@/types/models'
 
 export const productService = {
   async getAll(): Promise<Product[]> {
-    const { data } = await api.get('/api/v1/product')
-    return data
+    const { data } = await api.get('/api/v1/product?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Product>): Promise<Product> {
@@ -22,7 +22,7 @@ export const productService = {
   },
 
   async getHistory(id: number): Promise<Order[]> {
-    const { data } = await api.get(`/api/v1/product/${id}/history`)
-    return data
+    const { data } = await api.get(`/api/v1/product/${id}/history?per_page=10000`)
+    return data.results
   },
 }

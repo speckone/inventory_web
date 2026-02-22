@@ -3,8 +3,8 @@ import type { Category } from '@/types/models'
 
 export const categoryService = {
   async getAll(): Promise<Category[]> {
-    const { data } = await api.get('/api/v1/category')
-    return data
+    const { data } = await api.get('/api/v1/category?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Category>): Promise<Category> {

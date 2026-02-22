@@ -3,8 +3,8 @@ import type { Invoice } from '@/types/models'
 
 export const invoiceService = {
   async getAll(): Promise<Invoice[]> {
-    const { data } = await api.get('/api/v1/invoice')
-    return data
+    const { data } = await api.get('/api/v1/invoice?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Invoice>): Promise<Invoice> {

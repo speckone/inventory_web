@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
       :items="items"
@@ -145,15 +146,18 @@ import { unitService } from '@/services/unit.service'
 import { vendorService } from '@/services/vendor.service'
 import { categoryService } from '@/services/category.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { useSnackbarStore } from '@/stores/snackbar'
 import EntitySelect from '@/components/EntitySelect.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatCurrency } from '@/utils/formatters'
 import type { Product, Unit, Vendor, Category, Order } from '@/types/models'
 
 const { confirm } = useConfirmDialog()
+const snackbarStore = useSnackbarStore()
 
 const search = ref('')
 const dialog = ref(false)
+const loading = ref(false)
 const historyDialog = ref(false)
 const historyProductName = ref('')
 const historyData = ref<Order[]>([])
@@ -188,10 +192,14 @@ const formTitle = computed(() => {
 
 const items = computed(() => {
   if (productData.value && unitData.value && vendorData.value && categoryData.value) {
+    const unitMap = new Map(unitData.value.map((u) => [u.id, u]))
+    const categoryMap = new Map(categoryData.value.map((c) => [c.id, c]))
+    const vendorMap = new Map(vendorData.value.map((v) => [v.id, v]))
+
     return productData.value.map((product) => {
-      const productUnit = unitData.value.find((unit) => unit.id === product.unit_id)
-      const productCategory = categoryData.value.find((cat) => cat.id === product.category_id)
-      const productVendor = vendorData.value.find((vendor) => vendor.id === product.vendor_id)
+      const productUnit = unitMap.get(product.unit_id)
+      const productCategory = categoryMap.get(product.category_id)
+      const productVendor = vendorMap.get(product.vendor_id)
       return {
         ...product,
         unit: productUnit?.name ?? '',
@@ -208,10 +216,24 @@ async function loadProducts() {
 }
 
 async function loadData() {
-  productData.value = await productService.getAll()
-  unitData.value = await unitService.getAll()
-  vendorData.value = await vendorService.getAll()
-  categoryData.value = await categoryService.getAll()
+  loading.value = true
+  try {
+    const [products, units, vendors, categories] = await Promise.all([
+      productService.getAll(),
+      unitService.getAll(),
+      vendorService.getAll(),
+      categoryService.getAll(),
+    ])
+    productData.value = products
+    unitData.value = units
+    vendorData.value = vendors
+    categoryData.value = categories
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load product data'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
+  } finally {
+    loading.value = false
+  }
 }
 
 function editItem(item: Product) {
@@ -225,15 +247,25 @@ async function deleteItem(product: Product) {
     icon: 'mdi-alert',
   })
   if (confirmed) {
-    await productService.delete(product.id)
-    await loadProducts()
+    try {
+      await productService.delete(product.id)
+      await loadProducts()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete product'
+      snackbarStore.showSnackbar({ text: message, color: 'error' })
+    }
   }
 }
 
 async function showOrderHistory(item: Product) {
-  historyData.value = await productService.getHistory(item.id)
-  historyProductName.value = item.name
-  historyDialog.value = true
+  try {
+    historyData.value = await productService.getHistory(item.id)
+    historyProductName.value = item.name
+    historyDialog.value = true
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load order history'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
+  }
 }
 
 function closeHistory() {
@@ -247,25 +279,30 @@ function close() {
 }
 
 async function save() {
-  if (editedId.value > -1) {
-    await productService.update(editedId.value, {
-      name: editedItem.value.name,
-      unit_price: editedItem.value.unit_price,
-      unit_id: editedItem.value.unit_id,
-      vendor_id: editedItem.value.vendor_id,
-      category_id: editedItem.value.category_id,
-    })
-  } else {
-    await productService.create({
-      name: editedItem.value.name,
-      unit_price: editedItem.value.unit_price,
-      unit_id: editedItem.value.unit_id,
-      vendor_id: editedItem.value.vendor_id,
-      category_id: editedItem.value.category_id,
-    })
+  try {
+    if (editedId.value > -1) {
+      await productService.update(editedId.value, {
+        name: editedItem.value.name,
+        unit_price: editedItem.value.unit_price,
+        unit_id: editedItem.value.unit_id,
+        vendor_id: editedItem.value.vendor_id,
+        category_id: editedItem.value.category_id,
+      })
+    } else {
+      await productService.create({
+        name: editedItem.value.name,
+        unit_price: editedItem.value.unit_price,
+        unit_id: editedItem.value.unit_id,
+        vendor_id: editedItem.value.vendor_id,
+        category_id: editedItem.value.category_id,
+      })
+    }
+    close()
+    await loadProducts()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save product'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
-  close()
-  await loadProducts()
 }
 
 onMounted(() => {

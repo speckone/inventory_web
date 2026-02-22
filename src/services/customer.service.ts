@@ -3,8 +3,8 @@ import type { Customer } from '@/types/models'
 
 export const customerService = {
   async getAll(): Promise<Customer[]> {
-    const { data } = await api.get('/api/v1/customer')
-    return data
+    const { data } = await api.get('/api/v1/customer?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Customer>): Promise<Customer> {

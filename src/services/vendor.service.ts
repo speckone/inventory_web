@@ -3,8 +3,8 @@ import type { Vendor } from '@/types/models'
 
 export const vendorService = {
   async getAll(): Promise<Vendor[]> {
-    const { data } = await api.get('/api/v1/vendor')
-    return data
+    const { data } = await api.get('/api/v1/vendor?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Vendor>): Promise<Vendor> {

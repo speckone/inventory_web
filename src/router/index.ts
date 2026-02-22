@@ -80,8 +80,8 @@ router.beforeEach((to) => {
         // Redirect non-admin users to a default page
         return '/'
       }
-    } catch (error) {
-      console.error('Failed to parse user from localStorage:', error)
+    } catch {
+      localStorage.removeItem('user')
       return '/login'
     }
   }

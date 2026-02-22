@@ -31,6 +31,9 @@
         </v-card-actions>
       </v-form>
     </v-card-text>
+    <v-snackbar v-model="errorSnackbar" :timeout="4000" color="error">
+      {{ errorMessage }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -42,6 +45,8 @@ const authStore = useAuthStore()
 const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const errorSnackbar = ref(false)
+const errorMessage = ref('')
 
 onMounted(() => {
   authStore.logout()
@@ -51,8 +56,9 @@ async function handleSubmit() {
   if (username.value && password.value) {
     try {
       await authStore.login(username.value, password.value)
-    } catch (error) {
-      console.error('Login failed:', error)
+    } catch {
+      errorMessage.value = 'Login failed. Please check your credentials and try again.'
+      errorSnackbar.value = true
     }
   }
 }

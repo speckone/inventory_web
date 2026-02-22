@@ -3,8 +3,8 @@ import type { Unit } from '@/types/models'
 
 export const unitService = {
   async getAll(): Promise<Unit[]> {
-    const { data } = await api.get('/api/v1/unit')
-    return data
+    const { data } = await api.get('/api/v1/unit?per_page=10000')
+    return data.results
   },
 
   async create(body: Partial<Unit>): Promise<Unit> {

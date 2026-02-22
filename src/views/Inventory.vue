@@ -1,11 +1,12 @@
 <template>
   <div>
+    <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
       :items="items"
       item-value="id"
       :sort-by="[{ key: 'id' }]"
-      :search="searchProduct"
+      :search="debouncedSearch"
       :custom-filter="filterByCategory"
       v-model:items-per-page="itemsPerPage"
       fixed-header
@@ -99,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { InventoryItem, Product, Category, Unit } from '@/types/models'
 import { inventoryService } from '@/services/inventory.service'
@@ -108,12 +109,14 @@ import { categoryService } from '@/services/category.service'
 import { unitService } from '@/services/unit.service'
 import { orderService } from '@/services/order.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { useSnackbarStore } from '@/stores/snackbar'
 import { formatCurrency } from '@/utils/formatters'
 import EditableCell from '@/components/EditableCell.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
 
 const router = useRouter()
 const { confirm } = useConfirmDialog()
+const snackbarStore = useSnackbarStore()
 
 const inventoryItems = ref<InventoryItem[]>([])
 const products = ref<Product[]>([])
@@ -123,8 +126,17 @@ const units = ref<Unit[]>([])
 const dialog = ref(false)
 const valid = ref(false)
 const formRef = ref()
+const loading = ref(false)
 const snackbar = ref(false)
 const searchProduct = ref('')
+const debouncedSearch = ref('')
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(searchProduct, (val) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    debouncedSearch.value = val
+  }, 300)
+})
 const searchCategory = ref<string | null>(null)
 const itemsPerPage = ref(10)
 const editedIndex = ref(-1)
@@ -183,7 +195,7 @@ const formTitle = computed(() => {
   return editedIndex.value === -1 ? 'New Item' : 'Edit Item'
 })
 
-function filterByCategory(value: string, query: string, item?: { raw: Record<string, unknown> }): boolean {
+function filterByCategory(_value: string, query: string, item?: { raw: Record<string, unknown> }): boolean {
   if (!query) return true
   const productName = item?.raw?.product as string | undefined
   if (!productName) return false
@@ -191,6 +203,7 @@ function filterByCategory(value: string, query: string, item?: { raw: Record<str
 }
 
 async function loadData() {
+  loading.value = true
   try {
     const [inv, prod, cat, un] = await Promise.all([
       inventoryService.getAll(),
@@ -203,7 +216,10 @@ async function loadData() {
     categories.value = cat
     units.value = un
   } catch (error) {
-    console.error('Failed to load inventory data:', error)
+    const message = error instanceof Error ? error.message : 'Failed to load inventory data'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
+  } finally {
+    loading.value = false
   }
 }
 
@@ -233,7 +249,8 @@ async function deleteItem(item: InventoryItem) {
         inventoryItems.value.splice(index, 1)
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
+      const message = error instanceof Error ? error.message : 'Failed to delete item'
+      snackbarStore.showSnackbar({ text: message, color: 'error' })
     }
   }
 }
@@ -268,7 +285,8 @@ async function save() {
     snackbar.value = true
     close()
   } catch (error) {
-    console.error('Failed to save item:', error)
+    const message = error instanceof Error ? error.message : 'Failed to save item'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
 
@@ -281,7 +299,8 @@ async function updateItemQuantity(item: InventoryItem, quantity: number) {
     }
     snackbar.value = true
   } catch (error) {
-    console.error('Failed to update quantity:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update quantity'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
 
@@ -295,7 +314,8 @@ async function createOrder() {
       await orderService.create()
       router.push('/orders')
     } catch (error) {
-      console.error('Failed to create order:', error)
+      const message = error instanceof Error ? error.message : 'Failed to create order'
+      snackbarStore.showSnackbar({ text: message, color: 'error' })
     }
   }
 }

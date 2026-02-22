@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        VITE_BASE_URL: ${VITE_BASE_URL:-http://localhost:5001}
+        VITE_BASE_URL: ${VITE_BASE_URL:-}
     ports:
       - "3000:80"
     restart: unless-stopped

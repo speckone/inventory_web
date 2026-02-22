@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
       :items="items"
@@ -89,68 +90,20 @@
         <v-icon size="small" class="mr-2" @click="viewInvoice(item)">
           mdi-eye
         </v-icon>
-        <v-icon size="small" @click="exportInvoicePdf(item)">
+        <v-icon size="small" @click="handleExportPdf(item)">
           mdi-file-pdf-box
         </v-icon>
       </template>
 
     </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
-      <v-card>
-              <v-card-title>
-                <span class="text-h5">{{ formTitle }}</span>
-              </v-card-title>
-
-              <v-card-text>
-                <v-container>
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model.number="editedItem.invoice_number"
-                        label="Invoice Number"
-                        type="number"
-                        :rules="[v => !!v || 'Invoice number is required']"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <EntitySelect
-                        v-model="editedItem.customer_id"
-                        label="Customer"
-                        :load-items="customerService.getAll"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="editedItem.date"
-                        label="Date"
-                        type="date"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <v-checkbox
-                        v-model="editedItem.paid"
-                        label="Paid"
-                        hide-details
-                      />
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-card-text>
-
-              <v-card-actions>
-                <v-spacer />
-                <v-btn color="blue-darken-1" variant="text" @click="close">Cancel</v-btn>
-                <v-btn color="blue-darken-1" variant="text" @click="save">Save</v-btn>
-              </v-card-actions>
-            </v-card>
-    </v-dialog>
+    <InvoiceForm
+      v-model="dialog"
+      :edited-item="editedItem"
+      :form-title="formTitle"
+      @close="close"
+      @save="save"
+    />
 
     <!-- Invoice Items Dialog -->
     <v-dialog v-model="itemsDialog" max-width="800" @click:outside="closeItemsDialog">
@@ -244,72 +197,12 @@
       </v-card>
     </v-dialog>
 
-    <!-- View Invoice Dialog -->
-    <v-dialog v-model="viewDialog" max-width="800">
-      <v-card v-if="viewInvoiceData" class="pa-6">
-        <!-- Header -->
-        <div class="d-flex justify-space-between mb-6">
-          <div>
-            <img :src="essoCoffeeLogo" alt="Esso Coffee" style="height: 40px;" class="mb-2" />
-            <div class="text-body-2">4700 N 12th St #107</div>
-            <div class="text-body-2">Phoenix, AZ 85014</div>
-            <div class="text-body-2">Phone: 480.560.3067</div>
-          </div>
-          <div class="text-right">
-            <div class="text-h6">INVOICE # {{ viewInvoiceData.invoice_number }}</div>
-            <v-chip :color="viewInvoiceData.paid ? 'success' : 'warning'" size="small" variant="flat" class="mt-2">
-              {{ viewInvoiceData.paid ? 'Paid' : 'Unpaid' }}
-            </v-chip>
-          </div>
-        </div>
-
-        <!-- Bill To -->
-        <div class="mb-6">
-          <span class="font-weight-bold font-italic">BILL TO:</span>
-          <span class="ml-4">{{ viewCustomerData?.name }}</span>
-          <div v-if="viewCustomerData?.address" class="ml-16 text-body-2">{{ viewCustomerData.address }}</div>
-          <div v-if="viewCustomerData?.city || viewCustomerData?.state || viewCustomerData?.zip_code" class="ml-16 text-body-2">
-            {{ [viewCustomerData?.city, viewCustomerData?.state].filter(Boolean).join(', ') }}
-            {{ viewCustomerData?.zip_code }}
-          </div>
-        </div>
-
-        <!-- Line Items Table -->
-        <v-table density="compact">
-          <thead>
-            <tr class="bg-blue-lighten-4">
-              <th class="font-weight-bold font-italic">DATE OF SERVICE</th>
-              <th class="font-weight-bold font-italic">DESCRIPTION</th>
-              <th class="font-weight-bold font-italic text-right">PRICE</th>
-              <th class="font-weight-bold font-italic text-right">QUANTITY</th>
-              <th class="font-weight-bold font-italic text-right">AMOUNT</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="lineItem in viewInvoiceItems" :key="lineItem.id">
-              <td>{{ lineItem.date_of_service ? formatDate(lineItem.date_of_service) : '' }}</td>
-              <td>{{ lineItem.description }}</td>
-              <td class="text-right">{{ formatCurrency(lineItem.price_per_unit) }}</td>
-              <td class="text-right">{{ lineItem.quantity }}</td>
-              <td class="text-right">{{ lineItem.amount != null ? formatCurrency(lineItem.amount) : '' }}</td>
-            </tr>
-          </tbody>
-        </v-table>
-
-        <!-- Totals -->
-        <div class="d-flex flex-column align-end mt-6">
-          <div class="d-flex" style="width: 280px;">
-            <span class="font-weight-bold font-italic flex-grow-1 text-right mr-4">TOTAL</span>
-            <span class="font-weight-bold text-right" style="width: 120px;">{{ viewInvoiceData.subtotal != null ? formatCurrency(viewInvoiceData.subtotal) : '$0.00' }}</span>
-          </div>
-        </div>
-
-        <v-card-actions class="mt-4">
-          <v-spacer />
-          <v-btn color="blue-darken-1" variant="text" @click="viewDialog = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <InvoicePreview
+      v-model="viewDialog"
+      :invoice="viewInvoiceData"
+      :customer="viewCustomerData"
+      :invoice-items="viewInvoiceItems"
+    />
 
     <ConfirmDialog />
   </div>
@@ -317,22 +210,25 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { invoiceService } from '@/services/invoice.service'
 import { invoiceItemService } from '@/services/invoiceItem.service'
 import { customerService } from '@/services/customer.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
-import EntitySelect from '@/components/EntitySelect.vue'
+import { useSnackbarStore } from '@/stores/snackbar'
+import InvoiceForm from '@/components/InvoiceForm.vue'
+import InvoicePreview from '@/components/InvoicePreview.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatCurrency, formatDate } from '@/utils/formatters'
+import { exportInvoicePdf } from '@/utils/invoicePdf'
 import type { Invoice, InvoiceItem, Customer } from '@/types/models'
 import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
 
 const { confirm } = useConfirmDialog()
+const snackbarStore = useSnackbarStore()
 
 const search = ref('')
 const dialog = ref(false)
+const loading = ref(false)
 const hidePaid = ref(false)
 const hideOldInvoices = ref(false)
 const itemsDialog = ref(false)
@@ -355,13 +251,6 @@ const defaultItem: Partial<Invoice> = {
   customer_id: undefined,
   date: '',
   paid: false,
-}
-
-const defaultInvoiceItem: Partial<InvoiceItem> = {
-  description: '',
-  quantity: 0,
-  price_per_unit: 0,
-  date_of_service: '',
 }
 
 function getDefaultInvoiceItem(): Partial<InvoiceItem> {
@@ -448,14 +337,22 @@ async function loadInvoices() {
 }
 
 async function loadData() {
-  const [invoices, customers, invoiceItems] = await Promise.all([
-    invoiceService.getAll(),
-    customerService.getAll(),
-    invoiceItemService.getAll(),
-  ])
-  invoiceData.value = invoices
-  customerData.value = customers
-  allInvoiceItems.value = invoiceItems
+  loading.value = true
+  try {
+    const [invoices, customers, invoiceItems] = await Promise.all([
+      invoiceService.getAll(),
+      customerService.getAll(),
+      invoiceItemService.getAll(),
+    ])
+    invoiceData.value = invoices
+    customerData.value = customers
+    allInvoiceItems.value = invoiceItems
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load invoice data'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
+  } finally {
+    loading.value = false
+  }
 }
 
 function todayISO(): string {
@@ -489,128 +386,25 @@ async function deleteItem(invoice: Invoice) {
     icon: 'mdi-alert',
   })
   if (confirmed) {
-    await invoiceService.delete(invoice.id)
-    await loadInvoices()
+    try {
+      await invoiceService.delete(invoice.id)
+      await loadInvoices()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete invoice'
+      snackbarStore.showSnackbar({ text: message, color: 'error' })
+    }
   }
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = reject
-    img.src = src
-  })
-}
-
-async function exportInvoicePdf(item: Invoice) {
+async function handleExportPdf(item: Invoice) {
   const customer = customerData.value.find((c) => c.id === item.customer_id)
   const lineItems = allInvoiceItems.value.filter((i) => i.invoice_id === item.id)
-
-  const doc = new jsPDF()
-  const pageWidth = doc.internal.pageSize.getWidth()
-
-  // Logo
-  let headerBottom = 40
   try {
-    const logoImg = await loadImage(essoCoffeeLogo)
-    const logoHeight = 14
-    const logoWidth = (logoImg.width / logoImg.height) * logoHeight
-    doc.addImage(logoImg, 'PNG', 14, 10, logoWidth, logoHeight)
-    headerBottom = 28
-  } catch {
-    // If logo fails to load, fall back to text header
-    doc.setFontSize(18)
-    doc.setFont('helvetica', 'bolditalic')
-    doc.text('Esso Coffeehouse', 14, 22)
-    headerBottom = 28
+    await exportInvoicePdf(item, customer, lineItems, essoCoffeeLogo)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to export PDF'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
-
-  // Business address
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text('4700 N 12th St #107', 14, headerBottom)
-  doc.text('Phoenix, AZ 85014', 14, headerBottom + 5)
-  doc.text('Phone: 480.560.3067', 14, headerBottom + 10)
-
-  // Invoice number
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`INVOICE # ${item.invoice_number}`, pageWidth - 14, 18, { align: 'right' })
-
-  // Bill To
-  let billY = headerBottom + 22
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bolditalic')
-  doc.text('BILL TO:', 14, billY)
-  doc.setFont('helvetica', 'normal')
-  if (customer) {
-    doc.text(customer.name, 44, billY)
-    if (customer.address) {
-      billY += 5
-      doc.text(customer.address, 44, billY)
-    }
-    const cityLine = [customer.city, customer.state].filter(Boolean).join(', ')
-    const fullLine = [cityLine, customer.zip_code].filter(Boolean).join(' ')
-    if (fullLine) {
-      billY += 5
-      doc.text(fullLine, 44, billY)
-    }
-  }
-
-  // Line items table
-  const tableY = billY + 12
-  autoTable(doc, {
-    startY: tableY,
-    head: [[
-      'DATE OF SERVICE',
-      'DESCRIPTION',
-      'PRICE',
-      'QUANTITY',
-      'AMOUNT',
-    ]],
-    body: lineItems.map((li) => [
-      li.date_of_service ? formatDate(li.date_of_service) : '',
-      li.description,
-      formatCurrency(li.price_per_unit),
-      String(li.quantity),
-      li.amount != null ? formatCurrency(li.amount) : '',
-    ]),
-    headStyles: {
-      fillColor: [187, 212, 238],
-      textColor: [0, 0, 0],
-      fontStyle: 'bolditalic',
-      fontSize: 9,
-    },
-    bodyStyles: { fontSize: 9 },
-    columnStyles: {
-      2: { halign: 'right' },
-      3: { halign: 'right' },
-      4: { halign: 'right' },
-    },
-    theme: 'grid',
-  })
-
-  // Totals
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finalY = (doc as any).lastAutoTable.finalY + 10
-  const totalsX = pageWidth - 14
-
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'bolditalic')
-  doc.text('SUBTOTAL', totalsX - 35, finalY, { align: 'right' })
-  doc.setFont('helvetica', 'normal')
-  doc.text(item.subtotal != null ? formatCurrency(item.subtotal) : '$0.00', totalsX, finalY, { align: 'right' })
-
-  doc.line(totalsX - 70, finalY + 3, totalsX, finalY + 3)
-
-  doc.setFont('helvetica', 'bolditalic')
-  doc.text('BALANCE', totalsX - 35, finalY + 10, { align: 'right' })
-  doc.setFont('helvetica', 'bold')
-  doc.text(item.subtotal != null ? formatCurrency(item.subtotal) : '$0.00', totalsX, finalY + 10, { align: 'right' })
-
-  const customerSlug = customer ? customer.name.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase() : 'unknown'
-  doc.save(`invoice_${item.invoice_number}_${customerSlug}.pdf`)
 }
 
 function viewInvoice(item: Invoice) {
@@ -640,32 +434,41 @@ function closeItemsDialog() {
   editedInvoiceItem.value = getDefaultInvoiceItem()
 }
 
-async function save() {
-  const payload = {
-    invoice_number: editedItem.value.invoice_number,
-    customer_id: editedItem.value.customer_id,
-    date: editedItem.value.date,
-    paid: editedItem.value.paid,
-  }
-  if (editedId.value > -1) {
-    await invoiceService.update(editedId.value, payload)
-    close()
-    await loadData()
-  } else {
-    const newInvoice = await invoiceService.create(payload)
-    const invoiceId = newInvoice.id
-    close()
-    await loadData()
-    // Wait for dialog to close before opening items dialog
-    await nextTick()
-    // Find the newly created invoice from the loaded data
-    const createdInvoice = invoiceData.value.find(inv => inv.id === invoiceId)
-    if (createdInvoice) {
-      // Automatically open invoice items dialog for the newly created invoice
-      selectedInvoiceId.value = createdInvoice.id
-      selectedInvoiceNumber.value = createdInvoice.invoice_number
-      itemsDialog.value = true
+async function save(payload: Partial<Invoice>) {
+  try {
+    if (editedId.value > -1) {
+      await invoiceService.update(editedId.value, {
+        invoice_number: payload.invoice_number,
+        customer_id: payload.customer_id,
+        date: payload.date,
+        paid: payload.paid,
+      })
+      close()
+      await loadData()
+    } else {
+      const newInvoice = await invoiceService.create({
+        invoice_number: payload.invoice_number,
+        customer_id: payload.customer_id,
+        date: payload.date,
+        paid: payload.paid,
+      })
+      const invoiceId = newInvoice.id
+      close()
+      await loadData()
+      // Wait for dialog to close before opening items dialog
+      await nextTick()
+      // Find the newly created invoice from the loaded data
+      const createdInvoice = invoiceData.value.find(inv => inv.id === invoiceId)
+      if (createdInvoice) {
+        // Automatically open invoice items dialog for the newly created invoice
+        selectedInvoiceId.value = createdInvoice.id
+        selectedInvoiceNumber.value = createdInvoice.invoice_number
+        itemsDialog.value = true
+      }
     }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save invoice'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
 
@@ -684,43 +487,53 @@ async function deleteInvoiceItem(item: InvoiceItem) {
     icon: 'mdi-alert',
   })
   if (confirmed) {
-    await invoiceItemService.delete(item.id)
+    try {
+      await invoiceItemService.delete(item.id)
+      const [invoices, invoiceItems] = await Promise.all([
+        invoiceService.getAll(),
+        invoiceItemService.getAll(),
+      ])
+      invoiceData.value = invoices
+      allInvoiceItems.value = invoiceItems
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete invoice item'
+      snackbarStore.showSnackbar({ text: message, color: 'error' })
+    }
+  }
+}
+
+async function saveInvoiceItem() {
+  try {
+    if (editedInvoiceItemId.value > -1) {
+      await invoiceItemService.update(editedInvoiceItemId.value, {
+        invoice_id: selectedInvoiceId.value,
+        description: editedInvoiceItem.value.description,
+        quantity: editedInvoiceItem.value.quantity,
+        price_per_unit: editedInvoiceItem.value.price_per_unit,
+        date_of_service: editedInvoiceItem.value.date_of_service,
+      })
+    } else {
+      await invoiceItemService.create({
+        invoice_id: selectedInvoiceId.value,
+        description: editedInvoiceItem.value.description,
+        quantity: editedInvoiceItem.value.quantity,
+        price_per_unit: editedInvoiceItem.value.price_per_unit,
+        date_of_service: editedInvoiceItem.value.date_of_service,
+      })
+    }
+    editedInvoiceItemId.value = -1
+    editedInvoiceItem.value = getDefaultInvoiceItem()
+
     const [invoices, invoiceItems] = await Promise.all([
       invoiceService.getAll(),
       invoiceItemService.getAll(),
     ])
     invoiceData.value = invoices
     allInvoiceItems.value = invoiceItems
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save invoice item'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
-}
-
-async function saveInvoiceItem() {
-  if (editedInvoiceItemId.value > -1) {
-    await invoiceItemService.update(editedInvoiceItemId.value, {
-      invoice_id: selectedInvoiceId.value,
-      description: editedInvoiceItem.value.description,
-      quantity: editedInvoiceItem.value.quantity,
-      price_per_unit: editedInvoiceItem.value.price_per_unit,
-      date_of_service: editedInvoiceItem.value.date_of_service,
-    })
-  } else {
-    await invoiceItemService.create({
-      invoice_id: selectedInvoiceId.value,
-      description: editedInvoiceItem.value.description,
-      quantity: editedInvoiceItem.value.quantity,
-      price_per_unit: editedInvoiceItem.value.price_per_unit,
-      date_of_service: editedInvoiceItem.value.date_of_service,
-    })
-  }
-  editedInvoiceItemId.value = -1
-  editedInvoiceItem.value = getDefaultInvoiceItem()
-
-  const [invoices, invoiceItems] = await Promise.all([
-    invoiceService.getAll(),
-    invoiceItemService.getAll(),
-  ])
-  invoiceData.value = invoices
-  allInvoiceItems.value = invoiceItems
 }
 
 onMounted(() => {

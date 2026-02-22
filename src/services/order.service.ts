@@ -3,8 +3,8 @@ import type { Order } from '@/types/models'
 
 export const orderService = {
   async getByStatus(status: string): Promise<Order[]> {
-    const { data } = await api.get(`/api/v1/order?status=${status}`)
-    return data
+    const { data } = await api.get(`/api/v1/order?status=${status}&per_page=10000`)
+    return data.results
   },
 
   async create(): Promise<Order> {

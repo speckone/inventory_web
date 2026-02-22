@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
       :items="items"
@@ -82,146 +83,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { productService } from '@/services/product.service'
-import { unitService } from '@/services/unit.service'
-import { orderService } from '@/services/order.service'
-import { orderItemService } from '@/services/orderItem.service'
-import { useConfirmDialog } from '@/composables/useConfirmDialog'
-import { useSnackbarStore } from '@/stores/snackbar'
+import { onMounted } from 'vue'
+import { useOrderView } from '@/composables/useOrderView'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EditableCell from '@/components/EditableCell.vue'
 import { formatCurrency } from '@/utils/formatters'
-import type { Product, Unit, Order, OrderItem } from '@/types/models'
 
-const { confirm } = useConfirmDialog()
-const snackbarStore = useSnackbarStore()
-
-const productData = ref<Product[]>([])
-const orderData = ref<Order[]>([])
-const orderItemData = ref<OrderItem[]>([])
-const unitData = ref<Unit[]>([])
-
-const headers = [
-  { title: 'ID', key: 'id' },
-  { title: 'Quantity', key: 'quantity' },
-  { title: 'Product', key: 'product' },
-  { title: 'Actions', key: 'actions', sortable: false },
-]
-
-const items = computed(() => {
-  if (orderData.value && orderItemData.value && productData.value && unitData.value) {
-    const openOrderIds = orderData.value.map((order) => order.id)
-    return orderItemData.value
-      .map((orderItem) => {
-        const orderProduct = productData.value.find((p) => p.id === orderItem.product_id)
-        const productUnit = orderProduct
-          ? unitData.value.find((u) => u.id === orderProduct.unit_id)
-          : undefined
-        return {
-          ...orderItem,
-          product: orderProduct?.name ?? '',
-          unit: productUnit?.name ?? '',
-        }
-      })
-      .filter((orderItem) => openOrderIds.includes(orderItem.order_id))
-  }
-  return []
-})
-
-function getOrderDate(orderId: number): string {
-  const order = orderData.value.find((o) => o.id === orderId)
-  return order ? new Date(order.date).toLocaleString() : ''
-}
-
-function getOrderStatus(orderId: number): string {
-  const order = orderData.value.find((o) => o.id === orderId)
-  return order?.status ?? ''
-}
-
-function getOrderCost(orderId: number): number {
-  const order = orderData.value.find((o) => o.id === orderId)
-  return order?.cost ?? 0
-}
-
-function isNew(orderId: number): boolean {
-  const order = orderData.value.find((o) => o.id === orderId)
-  return order?.status === 'New'
-}
-
-function isSubmitted(orderId: number): boolean {
-  const order = orderData.value.find((o) => o.id === orderId)
-  return order?.status === 'Submitted'
-}
-
-async function loadOrders() {
-  orderData.value = await orderService.getByStatus('New')
-}
-
-async function loadOrderItems() {
-  orderItemData.value = await orderItemService.getAll()
-}
-
-async function loadData() {
-  orderData.value = await orderService.getByStatus('New')
-  productData.value = await productService.getAll()
-  orderItemData.value = await orderItemService.getAll()
-  unitData.value = await unitService.getAll()
-}
-
-async function submitOrder(orderId: number) {
-  const confirmed = await confirm('Send order to Sharon?', {
-    icon: 'mdi-alert',
-    buttonTrueText: 'Yes! Send my order.',
-  })
-  if (confirmed) {
-    await orderService.updateStatus(orderId, 'Submitted')
-    await loadOrders()
-    snackbarStore.showSnackbar({
-      show: true,
-      text: 'Order submitted',
-      color: 'success',
-      timeout: 2000,
-    })
-  }
-}
-
-async function receiveOrder(orderId: number) {
-  await orderService.updateStatus(orderId, 'Received')
-  await loadOrders()
-  snackbarStore.showSnackbar({
-    show: true,
-    text: 'Order received',
-    color: 'success',
-    timeout: 2000,
-  })
-}
-
-async function cancelOrder(orderId: number) {
-  await orderService.updateStatus(orderId, 'Cancelled')
-  await loadOrders()
-  snackbarStore.showSnackbar({
-    show: true,
-    text: 'Order cancelled',
-    color: 'success',
-    timeout: 2000,
-  })
-}
-
-async function updateItemQuantity(item: OrderItem, quantity: number) {
-  await orderItemService.updateQuantity(item.id, quantity)
-  await loadOrderItems()
-}
-
-async function deleteItem(orderItem: OrderItem) {
-  const confirmed = await confirm('Delete Order Item: ' + orderItem.product + '?', {
-    icon: 'mdi-alert',
-  })
-  if (confirmed) {
-    await orderItemService.delete(orderItem.id)
-    await loadOrderItems()
-  }
-}
+const {
+  loading,
+  headers,
+  items,
+  getOrderDate,
+  getOrderStatus,
+  getOrderCost,
+  isNew,
+  isSubmitted,
+  loadData,
+  submitOrder,
+  receiveOrder,
+  cancelOrder,
+  updateItemQuantity,
+  deleteItem,
+} = useOrderView('New')
 
 onMounted(() => {
   loadData()

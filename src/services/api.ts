@@ -27,9 +27,13 @@ api.interceptors.request.use(
   (config) => {
     const userStr = localStorage.getItem('user')
     if (userStr) {
-      const user = JSON.parse(userStr)
-      if (user?.access_token) {
-        config.headers.Authorization = `Bearer ${user.access_token}`
+      try {
+        const user = JSON.parse(userStr)
+        if (user?.access_token) {
+          config.headers.Authorization = `Bearer ${user.access_token}`
+        }
+      } catch {
+        localStorage.removeItem('user')
       }
     }
     return config
@@ -63,7 +67,15 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
 
-      const user = JSON.parse(userStr)
+      let user
+      try {
+        user = JSON.parse(userStr)
+      } catch {
+        isRefreshing = false
+        localStorage.removeItem('user')
+        redirectToLogin()
+        return Promise.reject(error)
+      }
 
       try {
         const { data } = await axios.post(
