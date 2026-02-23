@@ -1,5 +1,5 @@
 import api from './api'
-import type { Product, Order } from '@/types/models'
+import type { Product, Order, PaginatedResponse } from '@/types/models'
 
 export const productService = {
   async getAll(): Promise<Product[]> {
@@ -19,6 +19,12 @@ export const productService = {
 
   async delete(id: number): Promise<void> {
     await api.delete(`/api/v1/product/${id}`)
+  },
+
+  async getPage(params: { page?: number; perPage?: number } = {}): Promise<PaginatedResponse<Product>> {
+    const { page = 1, perPage = 25 } = params
+    const { data } = await api.get(`/api/v1/product?page=${page}&per_page=${perPage}`)
+    return data
   },
 
   async getHistory(id: number): Promise<Order[]> {

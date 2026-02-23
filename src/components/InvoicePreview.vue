@@ -31,7 +31,7 @@
       <!-- Line Items Table -->
       <v-table density="compact">
         <thead>
-          <tr class="bg-blue-lighten-4">
+          <tr class="bg-surface-variant">
             <th class="font-weight-bold font-italic">DATE OF SERVICE</th>
             <th class="font-weight-bold font-italic">DESCRIPTION</th>
             <th class="font-weight-bold font-italic text-right">PRICE</th>
@@ -60,7 +60,7 @@
 
       <v-card-actions class="mt-4">
         <v-spacer />
-        <v-btn color="blue-darken-1" variant="text" @click="$emit('update:modelValue', false)">Close</v-btn>
+        <v-btn color="primary" variant="text" @click="$emit('update:modelValue', false)">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

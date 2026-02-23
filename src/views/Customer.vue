@@ -1,9 +1,45 @@
 <template>
-  <div>
-    <v-data-table :headers="headers" :items="items">
+  <v-card class="ma-4">
+    <v-data-table-server
+      :headers="headers"
+      :items="paginatedCustomers"
+      :items-length="totalCustomers"
+      :loading="customersLoading"
+      :items-per-page-options="[10, 25, 50, { value: -1, title: 'All' }]"
+      show-expand
+      @update:options="onOptionsUpdate"
+    >
       <template #item.actions="{ item }">
         <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
         <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+      </template>
+      <template #item.unpaid_balance="{ item }">
+        <v-chip v-if="getUnpaidBalance(item.id) > 0" color="warning" size="small" variant="flat">
+          {{ formatCurrency(getUnpaidBalance(item.id)) }}
+        </v-chip>
+        <span v-else class="text-grey">$0.00</span>
+      </template>
+      <template #expanded-row="{ columns, item }">
+        <tr>
+          <td :colspan="columns.length" class="pa-4">
+            <div class="d-flex justify-space-between align-center mb-2">
+              <span class="text-subtitle-2 font-weight-bold">Invoice History</span>
+              <v-btn size="small" color="primary" prepend-icon="mdi-plus" @click="$router.push('/invoices')">New Invoice</v-btn>
+            </div>
+            <v-table v-if="getCustomerInvoices(item.id).length > 0" density="compact">
+              <thead><tr><th>Invoice #</th><th>Date</th><th>Subtotal</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr v-for="inv in getCustomerInvoices(item.id)" :key="inv.id">
+                  <td>{{ inv.invoice_number }}</td>
+                  <td>{{ inv.date ? formatDate(inv.date) : '' }}</td>
+                  <td>{{ inv.subtotal != null ? formatCurrency(inv.subtotal) : '' }}</td>
+                  <td><v-chip :color="inv.paid ? 'success' : 'warning'" size="x-small" variant="flat">{{ inv.paid ? 'Paid' : 'Unpaid' }}</v-chip></td>
+                </tr>
+              </tbody>
+            </v-table>
+            <div v-else class="text-grey text-body-2">No invoices for this customer</div>
+          </td>
+        </tr>
       </template>
       <template #top>
         <v-toolbar flat>
@@ -13,7 +49,7 @@
           <v-btn color="primary" @click="openNew">New Customer</v-btn>
         </v-toolbar>
       </template>
-    </v-data-table>
+    </v-data-table-server>
 
     <v-dialog v-model="dialog" max-width="600" @click:outside="close">
       <v-card>
@@ -81,18 +117,29 @@
     <v-snackbar v-model="snackbar" :timeout="1500" color="success">
       Item updated
     </v-snackbar>
-  </div>
+  </v-card>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { customerService } from '@/services/customer.service'
+import { invoiceService } from '@/services/invoice.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
-import type { Customer } from '@/types/models'
+import { usePagination } from '@/composables/usePagination'
+import type { Customer, Invoice } from '@/types/models'
+import { formatCurrency, formatDate } from '@/utils/formatters'
 
 const { confirm } = useConfirmDialog()
 
-const items = ref<Customer[]>([])
+const {
+  items: paginatedCustomers,
+  totalItems: totalCustomers,
+  loading: customersLoading,
+  onOptionsUpdate,
+  refresh: refreshCustomers,
+} = usePagination<Customer>((page, perPage) => customerService.getPage({ page, perPage }))
+
+const invoices = ref<Invoice[]>([])
 const dialog = ref(false)
 const valid = ref(false)
 const snackbar = ref(false)
@@ -115,6 +162,7 @@ const headers = [
   { title: 'Phone', key: 'phone' },
   { title: 'City', key: 'city' },
   { title: 'State', key: 'state' },
+  { title: 'Unpaid Balance', key: 'unpaid_balance', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -123,7 +171,17 @@ const formTitle = computed(() => currentItemId.value === -1 ? 'New Customer' : '
 onMounted(() => { loadData() })
 
 async function loadData() {
-  items.value = await customerService.getAll()
+  invoices.value = await invoiceService.getAll()
+}
+
+function getUnpaidBalance(customerId: number): number {
+  return invoices.value
+    .filter(inv => inv.customer_id === customerId && !inv.paid)
+    .reduce((sum, inv) => sum + (inv.subtotal ?? 0), 0)
+}
+
+function getCustomerInvoices(customerId: number): Invoice[] {
+  return invoices.value.filter(inv => inv.customer_id === customerId)
 }
 
 function openNew() {
@@ -142,7 +200,8 @@ async function deleteItem(item: Customer) {
   const confirmed = await confirm(`Delete Customer: ${item.name}?`, { icon: 'mdi-alert' })
   if (confirmed) {
     await customerService.delete(item.id)
-    await loadData()
+    refreshCustomers()
+    invoices.value = await invoiceService.getAll()
   }
 }
 
@@ -178,7 +237,8 @@ async function save() {
     } else {
       await customerService.create(customerData)
     }
-    await loadData()
+    refreshCustomers()
+    invoices.value = await invoiceService.getAll()
     snackbar.value = true
     setTimeout(() => close(), 300)
   }

@@ -45,7 +45,7 @@ export const useAuthStore = defineStore('auth', {
         const data = await authService.login(username, password)
         this.status = { loggedIn: true }
         this.user = (data as any).user ?? data
-        router.push('/')
+        router.push('/dashboard')
       } catch (error) {
         this.status = {}
         this.user = null

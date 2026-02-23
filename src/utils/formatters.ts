@@ -4,5 +4,6 @@ export function formatCurrency(value: number | string): string {
 
 export function formatDate(value: string): string {
   if (!value) return ''
-  return new Date(value).toLocaleDateString()
+  const [year, month, day] = value.split('T')[0].split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString()
 }

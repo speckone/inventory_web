@@ -100,3 +100,10 @@ export interface LoginCredentials {
   username: string
   password: string
 }
+
+export interface PaginatedResponse<T> {
+  results: T[]
+  total: number
+  page: number
+  pages: number
+}

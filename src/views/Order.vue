@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-card class="ma-4">
     <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
@@ -7,6 +7,7 @@
       item-value="id"
       :group-by="[{ key: 'order_id', order: 'desc' }]"
       density="compact"
+      :items-per-page-options="[10, 25, 50, { value: -1, title: 'All' }]"
     >
       <template v-slot:top>
         <v-toolbar flat color="white">
@@ -36,7 +37,8 @@
               :icon="isGroupOpen(item) ? '$expand' : '$next'"
               @click="toggleGroup(item)"
             />
-            {{ getOrderStatus(item.value) }} Order: {{ item.value }} - {{ getOrderDate(item.value) }}
+            <v-chip :color="statusColor(getOrderStatus(item.value))" size="small" class="mr-2">{{ getOrderStatus(item.value) }}</v-chip>
+            Order: {{ item.value }} - {{ getOrderDate(item.value) }}
             <v-divider class="mx-8" inset vertical />
             Cost {{ formatCurrency(getOrderCost(item.value)) }}
 
@@ -79,7 +81,7 @@
     </v-data-table>
 
     <ConfirmDialog />
-  </div>
+  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -88,6 +90,16 @@ import { useOrderView } from '@/composables/useOrderView'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EditableCell from '@/components/EditableCell.vue'
 import { formatCurrency } from '@/utils/formatters'
+
+function statusColor(status: string) {
+  const map: Record<string, string> = {
+    New: 'info',
+    Submitted: 'warning',
+    Received: 'success',
+    Cancelled: 'default',
+  }
+  return map[status] || 'default'
+}
 
 const {
   loading,

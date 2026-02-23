@@ -1,27 +1,72 @@
 <template>
   <v-app>
     <v-navigation-drawer v-model="drawer">
+      <div class="d-flex align-center justify-center pa-4">
+        <img
+          src="@/assets/esso-coffee-logo.png"
+          alt="Esso Coffee"
+          style="max-width: 140px; max-height: 80px;"
+        />
+      </div>
+
+      <v-divider />
+
+      <!-- Main Section -->
       <v-list density="compact" nav>
+        <v-list-subheader>Main</v-list-subheader>
         <v-list-item
-          v-for="(item, i) in sidebar"
-          :key="i"
-          :prepend-icon="item.avatar"
+          v-for="item in mainItems"
+          :key="item.title"
+          :prepend-icon="item.icon"
           :title="item.title"
-          @click="visitRoute(item.router)"
+          :value="item.title"
+          @click="visitRoute(item.route)"
         />
       </v-list>
+
+      <!-- Admin Section (admin only) -->
+      <template v-if="authStore.isAdmin">
+        <v-divider />
+        <v-list density="compact" nav>
+          <v-list-subheader>Admin</v-list-subheader>
+          <v-list-item
+            v-for="item in adminItems"
+            :key="item.title"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            :value="item.title"
+            @click="visitRoute(item.route)"
+          />
+        </v-list>
+      </template>
+
+      <!-- Settings Section (admin only) -->
+      <template v-if="authStore.isAdmin">
+        <v-divider />
+        <v-list density="compact" nav>
+          <v-list-subheader>Settings</v-list-subheader>
+          <v-list-item
+            v-for="item in settingsItems"
+            :key="item.title"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            :value="item.title"
+            @click="visitRoute(item.route)"
+          />
+        </v-list>
+      </template>
     </v-navigation-drawer>
 
-    <v-app-bar color="indigo" dark>
+    <v-app-bar color="primary">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>{{ title }}</v-toolbar-title>
       <v-spacer />
       <v-menu v-if="authStore.loggedIn">
         <template #activator="{ props }">
-          <v-avatar color="indigo" v-bind="props">
+          <v-avatar color="primary-darken-1" v-bind="props">
             <v-icon>mdi-account-circle</v-icon>
           </v-avatar>
-          <span class="ml-2">{{ authStore.userName }}</span>
+          <span class="ml-2 text-white">{{ authStore.userName }}</span>
         </template>
         <v-list>
           <v-list-item @click="logout">
@@ -44,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppSnackbar from '@/components/AppSnackbar.vue'
@@ -56,27 +101,24 @@ const authStore = useAuthStore()
 const drawer = ref(false)
 const title = 'Esso Inventory'
 
-const allSidebarItems = [
-  { title: 'Inventory', avatar: 'mdi-home', router: '/' },
-  { title: 'Orders', avatar: 'mdi-cart-arrow-down', router: '/orders' },
-  { title: 'Order History', avatar: 'mdi-history', router: '/order_history' },
-  { title: 'Products', avatar: 'mdi-archive-arrow-down', router: '/products' },
-  { title: 'Categories', avatar: 'mdi-view-list', router: '/category' },
-  { title: 'Vendors', avatar: 'mdi-store', router: '/vendors' },
-  { title: 'Units', avatar: 'mdi-beaker', router: '/units' },
-  { title: 'Customers', avatar: 'mdi-account-group', router: '/customers', adminOnly: true },
-  { title: 'Invoices', avatar: 'mdi-receipt-text', router: '/invoices', adminOnly: true },
-  { title: 'About', avatar: 'mdi-information', router: '/about' },
+const mainItems = [
+  { title: 'Dashboard', icon: 'mdi-view-dashboard', route: '/dashboard' },
+  { title: 'Inventory', icon: 'mdi-clipboard-list', route: '/inventory' },
+  { title: 'Orders', icon: 'mdi-cart', route: '/orders' },
+  { title: 'Order History', icon: 'mdi-history', route: '/order_history' },
+  { title: 'Products', icon: 'mdi-coffee', route: '/products' },
 ]
 
-const sidebar = computed(() => {
-  return allSidebarItems.filter(item => {
-    // Show all items to admin users
-    if (authStore.isAdmin) return true
-    // For non-admin users, hide admin-only items
-    return !item.adminOnly
-  })
-})
+const adminItems = [
+  { title: 'Customers', icon: 'mdi-account-group', route: '/customers' },
+  { title: 'Invoices', icon: 'mdi-receipt-text', route: '/invoices' },
+]
+
+const settingsItems = [
+  { title: 'Categories', icon: 'mdi-tag', route: '/category' },
+  { title: 'Vendors', icon: 'mdi-store', route: '/vendors' },
+  { title: 'Units', icon: 'mdi-scale', route: '/units' },
+]
 
 function visitRoute(route: string) {
   router.push(route)

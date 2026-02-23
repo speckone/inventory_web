@@ -1,10 +1,22 @@
 import api from './api'
-import type { Order } from '@/types/models'
+import type { Order, PaginatedResponse } from '@/types/models'
 
 export const orderService = {
   async getByStatus(status: string): Promise<Order[]> {
     const { data } = await api.get(`/api/v1/order?status=${status}&per_page=10000`)
     return data.results
+  },
+
+  async getPage(params: { page?: number; perPage?: number } = {}): Promise<PaginatedResponse<Order>> {
+    const { page = 1, perPage = 25 } = params
+    const { data } = await api.get(`/api/v1/order?page=${page}&per_page=${perPage}`)
+    return data
+  },
+
+  async getPageByStatus(status: string, params: { page?: number; perPage?: number } = {}): Promise<PaginatedResponse<Order>> {
+    const { page = 1, perPage = 25 } = params
+    const { data } = await api.get(`/api/v1/order?status=${status}&page=${page}&per_page=${perPage}`)
+    return data
   },
 
   async create(): Promise<Order> {

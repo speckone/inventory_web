@@ -1,10 +1,16 @@
 import api from './api'
-import type { Invoice } from '@/types/models'
+import type { Invoice, PaginatedResponse } from '@/types/models'
 
 export const invoiceService = {
   async getAll(): Promise<Invoice[]> {
     const { data } = await api.get('/api/v1/invoice?per_page=10000')
     return data.results
+  },
+
+  async getPage(params: { page?: number; perPage?: number } = {}): Promise<PaginatedResponse<Invoice>> {
+    const { page = 1, perPage = 25 } = params
+    const { data } = await api.get(`/api/v1/invoice?page=${page}&per_page=${perPage}`)
+    return data
   },
 
   async create(body: Partial<Invoice>): Promise<Invoice> {

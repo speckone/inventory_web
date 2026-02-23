@@ -1,16 +1,16 @@
 <template>
-  <div>
-    <v-progress-linear v-if="loading" indeterminate />
+  <v-card class="ma-4">
+    <v-progress-linear v-if="loading" indeterminate color="primary" />
     <v-data-table
       :headers="headers"
       :items="items"
       :search="search"
+      :items-per-page-options="[10, 25, 50, { value: -1, title: 'All' }]"
     >
       <template v-slot:top>
-        <v-toolbar flat color="white">
+        <v-toolbar flat color="surface">
           <v-toolbar-title>Products</v-toolbar-title>
           <v-divider class="mx-4" inset vertical />
-          <v-spacer />
           <v-text-field
             v-model="search"
             append-inner-icon="mdi-magnify"
@@ -19,6 +19,8 @@
             hide-details
             density="compact"
           />
+          <v-spacer />
+          <v-btn color="primary" class="mb-2" @click="dialog = true">New Product</v-btn>
         </v-toolbar>
       </template>
 
@@ -37,80 +39,72 @@
           mdi-history
         </v-icon>
       </template>
-
-      <template v-slot:bottom>
-        <v-toolbar flat color="white">
-          <v-spacer />
-          <v-dialog v-model="dialog" max-width="500" @click:outside="close">
-            <template v-slot:activator="{ props }">
-              <v-btn color="primary" class="mb-2" v-bind="props">New Product</v-btn>
-            </template>
-            <v-card>
-              <v-card-title>
-                <span class="text-h5">{{ formTitle }}</span>
-              </v-card-title>
-
-              <v-card-text>
-                <v-container>
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="editedItem.name"
-                        label="Name"
-                        :rules="[v => !!v || 'Name is required']"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model.number="editedItem.unit_price"
-                        label="Unit price"
-                        type="number"
-                        :rules="[v => !!v || 'Price is required']"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <EntitySelect
-                        v-model="editedItem.category_id"
-                        label="Category"
-                        :load-items="categoryService.getAll"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <EntitySelect
-                        v-model="editedItem.unit_id"
-                        label="Unit"
-                        :load-items="unitService.getAll"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12">
-                      <EntitySelect
-                        v-model="editedItem.vendor_id"
-                        label="Vendor"
-                        :load-items="vendorService.getAll"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-card-text>
-
-              <v-card-actions>
-                <v-spacer />
-                <v-btn color="blue-darken-1" variant="text" @click="close">Cancel</v-btn>
-                <v-btn color="blue-darken-1" variant="text" @click="save">Save</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-        </v-toolbar>
-      </template>
     </v-data-table>
+
+    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">{{ formTitle }}</span>
+        </v-card-title>
+
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="editedItem.name"
+                  label="Name"
+                  :rules="[v => !!v || 'Name is required']"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model.number="editedItem.unit_price"
+                  label="Unit price"
+                  type="number"
+                  :rules="[v => !!v || 'Price is required']"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <EntitySelect
+                  v-model="editedItem.category_id"
+                  label="Category"
+                  :load-items="categoryService.getAll"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <EntitySelect
+                  v-model="editedItem.unit_id"
+                  label="Unit"
+                  :load-items="unitService.getAll"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <EntitySelect
+                  v-model="editedItem.vendor_id"
+                  label="Vendor"
+                  :load-items="vendorService.getAll"
+                />
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="close">Cancel</v-btn>
+          <v-btn color="primary" variant="text" @click="save">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Order History Dialog -->
     <v-dialog v-model="historyDialog" max-width="500" @click:outside="closeHistory">
@@ -136,7 +130,7 @@
     </v-dialog>
 
     <ConfirmDialog />
-  </div>
+  </v-card>
 </template>
 
 <script setup lang="ts">

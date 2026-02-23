@@ -1,9 +1,11 @@
 import { ref, computed, type Ref } from 'vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useSnackbarStore } from '@/stores/snackbar'
+import type { PaginatedResponse } from '@/types/models'
 
 export interface CrudService<T> {
   getAll(): Promise<T[]>
+  getPage?(params?: { page?: number; perPage?: number }): Promise<PaginatedResponse<T>>
   create(data: Partial<T>): Promise<T>
   update(id: number, data: Partial<T>): Promise<T>
   delete(id: number): Promise<void>

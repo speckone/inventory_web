@@ -5,6 +5,15 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/dashboard',
+    },
+    {
+      path: '/dashboard',
+      name: 'Dashboard',
+      component: () => import('@/views/Dashboard.vue'),
+    },
+    {
+      path: '/inventory',
       name: 'Inventory',
       component: () => import('@/views/Inventory.vue'),
     },
@@ -77,8 +86,8 @@ router.beforeEach((to) => {
     try {
       const user = (JSON.parse(userStr)).user
       if (!user || user.role !== 'admin') {
-        // Redirect non-admin users to a default page
-        return '/'
+        // Redirect non-admin users to the dashboard
+        return '/dashboard'
       }
     } catch {
       localStorage.removeItem('user')

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-card class="ma-4">
     <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
@@ -8,7 +8,8 @@
       :sort-by="[{ key: 'id' }]"
       :search="debouncedSearch"
       :custom-filter="filterByCategory"
-      v-model:items-per-page="itemsPerPage"
+      :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
+      :row-props="getRowProps"
       fixed-header
       height="700"
       show-select
@@ -19,8 +20,13 @@
           <v-divider class="mx-4" inset vertical />
           <v-text-field v-model="searchProduct" append-icon="mdi-magnify" label="Search" />
           <v-spacer />
-          <v-select :items="categoryNames" label="Category" v-model="searchCategory" clearable />
+          <v-btn color="primary" class="mb-2 mr-2" @click="dialog = true">New Item</v-btn>
+          <v-btn color="secondary" class="mb-2" @click="createOrder">Create Order</v-btn>
         </v-toolbar>
+        <v-chip-group v-model="searchCategory" selected-class="text-primary" class="px-4 pb-2">
+          <v-chip :value="null" filter>All</v-chip>
+          <v-chip v-for="name in categoryNames" :key="name" :value="name" filter>{{ name }}</v-chip>
+        </v-chip-group>
       </template>
       <template #item.cost="{ item }">
         {{ formatCurrency(item.cost) }}
@@ -37,66 +43,50 @@
         <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
         <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
       </template>
-      <template #bottom>
-        <v-toolbar flat>
-          <v-select
-            v-model="itemsPerPage"
-            :items="[10, 25, 50, 100, { title: 'All', value: -1 }]"
-            label="Items per page"
-            density="compact"
-            hide-details
-            style="max-width: 140px"
-            class="ml-2"
-          />
-          <v-spacer />
-          <v-dialog v-model="dialog" max-width="500" @click:outside="close">
-            <template #activator="{ props: activatorProps }">
-              <v-btn color="primary" class="mb-2 mr-2" v-bind="activatorProps">New Item</v-btn>
-            </template>
-            <v-card>
-              <v-form v-model="valid" ref="formRef">
-                <v-card-title>
-                  <span class="text-h5">{{ formTitle }}</span>
-                </v-card-title>
-                <EntitySelect
-                  v-model="currentItem.product_id"
-                  label="Product"
-                  :load-items="productService.getAll"
-                  :rules="[v => !!v || 'Product is required']"
-                />
-                <v-card-text>
-                  <v-container>
-                    <v-row>
-                      <v-col cols="12">
-                        <v-text-field label="Quantity" v-model.number="currentItem.quantity" :rules="[v => !!v || 'Quantity is required']" />
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12">
-                        <v-text-field label="Capacity" v-model.number="currentItem.capacity" :rules="[v => !!v || 'Capacity is required']" />
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12">
-                        <v-text-field label="Reorder Level" v-model.number="currentItem.reorder_level" :rules="[v => !!v || 'Reorder Level is required']" />
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-                <v-card-actions>
-                  <v-spacer />
-                  <v-btn color="blue-darken-1" variant="text" @click="close">Cancel</v-btn>
-                  <v-btn color="blue-darken-1" variant="text" @click="save">Save</v-btn>
-                </v-card-actions>
-              </v-form>
-            </v-card>
-          </v-dialog>
-          <v-btn color="primary" class="mb-2" @click="createOrder">Create Order</v-btn>
-        </v-toolbar>
-      </template>
     </v-data-table>
+
+    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+      <v-card>
+        <v-form v-model="valid" ref="formRef">
+          <v-card-title>
+            <span class="text-h5">{{ formTitle }}</span>
+          </v-card-title>
+          <EntitySelect
+            v-model="currentItem.product_id"
+            label="Product"
+            :load-items="productService.getAll"
+            :rules="[v => !!v || 'Product is required']"
+          />
+          <v-card-text>
+            <v-container>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field label="Quantity" v-model.number="currentItem.quantity" :rules="[v => !!v || 'Quantity is required']" />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field label="Capacity" v-model.number="currentItem.capacity" :rules="[v => !!v || 'Capacity is required']" />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field label="Reorder Level" v-model.number="currentItem.reorder_level" :rules="[v => !!v || 'Reorder Level is required']" />
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn color="blue-darken-1" variant="text" @click="close">Cancel</v-btn>
+            <v-btn color="blue-darken-1" variant="text" @click="save">Save</v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
+    <div v-if="items.length === 0 && !loading" class="text-center pa-8 text-grey">No inventory items found</div>
     <v-snackbar v-model="snackbar" :timeout="1500" color="success">Item updated</v-snackbar>
-  </div>
+  </v-card>
 </template>
 
 <script setup lang="ts">
@@ -138,7 +128,6 @@ watch(searchProduct, (val) => {
   }, 300)
 })
 const searchCategory = ref<string | null>(null)
-const itemsPerPage = ref(10)
 const editedIndex = ref(-1)
 
 const defaultItem: Partial<InventoryItem> = {
@@ -194,6 +183,12 @@ const categoryNames = computed(() => {
 const formTitle = computed(() => {
   return editedIndex.value === -1 ? 'New Item' : 'Edit Item'
 })
+
+function getRowProps({ item }: { item: any }) {
+  if (item.quantity === 0) return { class: 'bg-red-lighten-5' }
+  if (item.quantity <= item.reorder_level) return { class: 'bg-amber-lighten-5' }
+  return {}
+}
 
 function filterByCategory(_value: string, query: string, item?: { raw: Record<string, unknown> }): boolean {
   if (!query) return true

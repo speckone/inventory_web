@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <v-card class="ma-4">
     <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
       :headers="headers"
       :items="items"
       :search="search"
       :group-by="[{ key: 'customer' }]"
+      :items-per-page-options="[10, 25, 50, { value: -1, title: 'All' }]"
     >
       <template v-slot:group-header="{ item, columns, toggleGroup, isGroupOpen }">
         <tr>
@@ -205,7 +206,7 @@
     />
 
     <ConfirmDialog />
-  </div>
+  </v-card>
 </template>
 
 <script setup lang="ts">
