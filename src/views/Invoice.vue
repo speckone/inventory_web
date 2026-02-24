@@ -146,8 +146,9 @@
           <v-container>
             <v-row>
               <v-col cols="12">
-                <v-text-field
+                <v-combobox
                   v-model="editedInvoiceItem.description"
+                  :items="templateNames"
                   label="Description"
                   :rules="[v => !!v || 'Description is required']"
                 />
@@ -210,10 +211,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { invoiceService } from '@/services/invoice.service'
 import { invoiceItemService } from '@/services/invoiceItem.service'
 import { customerService } from '@/services/customer.service'
+import { invoiceItemTemplateService } from '@/services/invoiceItemTemplate.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useSnackbarStore } from '@/stores/snackbar'
 import InvoiceForm from '@/components/InvoiceForm.vue'
@@ -221,7 +223,7 @@ import InvoicePreview from '@/components/InvoicePreview.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import { exportInvoicePdf } from '@/utils/invoicePdf'
-import type { Invoice, InvoiceItem, Customer } from '@/types/models'
+import type { Invoice, InvoiceItem, Customer, InvoiceItemTemplate } from '@/types/models'
 import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
 
 const { confirm } = useConfirmDialog()
@@ -241,6 +243,8 @@ const viewInvoiceItems = ref<InvoiceItem[]>([])
 const invoiceData = ref<Invoice[]>([])
 const customerData = ref<Customer[]>([])
 const allInvoiceItems = ref<InvoiceItem[]>([])
+const invoiceItemTemplates = ref<InvoiceItemTemplate[]>([])
+const templateNames = computed(() => invoiceItemTemplates.value.map(t => t.name))
 
 const editedId = ref(-1)
 const selectedInvoiceId = ref(-1)
@@ -340,14 +344,16 @@ async function loadInvoices() {
 async function loadData() {
   loading.value = true
   try {
-    const [invoices, customers, invoiceItems] = await Promise.all([
+    const [invoices, customers, invoiceItems, fetchedTemplates] = await Promise.all([
       invoiceService.getAll(),
       customerService.getAll(),
       invoiceItemService.getAll(),
+      invoiceItemTemplateService.getAll(),
     ])
     invoiceData.value = invoices
     customerData.value = customers
     allInvoiceItems.value = invoiceItems
+    invoiceItemTemplates.value = fetchedTemplates
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load invoice data'
     snackbarStore.showSnackbar({ text: message, color: 'error' })
@@ -536,6 +542,13 @@ async function saveInvoiceItem() {
     snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
+
+watch(() => editedInvoiceItem.value.description, (newDesc) => {
+  const template = invoiceItemTemplates.value.find(t => t.name === newDesc)
+  if (template && template.price_per_unit != null) {
+    editedInvoiceItem.value.price_per_unit = template.price_per_unit
+  }
+})
 
 onMounted(() => {
   loadData()

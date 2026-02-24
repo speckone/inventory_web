@@ -26,6 +26,12 @@ export interface Unit {
   name: string
 }
 
+export interface InvoiceItemTemplate {
+  id: number
+  name: string
+  price_per_unit: number | null
+}
+
 export interface InventoryItem {
   id: number
   product_id: number

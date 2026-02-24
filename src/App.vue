@@ -118,6 +118,7 @@ const settingsItems = [
   { title: 'Categories', icon: 'mdi-tag', route: '/category' },
   { title: 'Vendors', icon: 'mdi-store', route: '/vendors' },
   { title: 'Units', icon: 'mdi-scale', route: '/units' },
+  { title: 'Item Templates', icon: 'mdi-text-box-outline', route: '/invoice-item-templates' },
 ]
 
 function visitRoute(route: string) {

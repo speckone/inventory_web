@@ -48,6 +48,12 @@ const router = createRouter({
       component: () => import('@/views/Unit.vue'),
     },
     {
+      path: '/invoice-item-templates',
+      name: 'Invoice Item Templates',
+      component: () => import('@/views/InvoiceItemTemplate.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/customers',
       name: 'Customers',
       component: () => import('@/views/Customer.vue'),
