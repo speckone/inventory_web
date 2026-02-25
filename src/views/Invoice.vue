@@ -328,7 +328,13 @@ const items = computed(() => {
 })
 
 const currentInvoiceItems = computed(() => {
-  return allInvoiceItems.value.filter(item => item.invoice_id === selectedInvoiceId.value)
+  return allInvoiceItems.value
+    .filter(item => item.invoice_id === selectedInvoiceId.value)
+    .sort((a, b) => {
+      if (!a.date_of_service) return 1
+      if (!b.date_of_service) return -1
+      return a.date_of_service.localeCompare(b.date_of_service)
+    })
 })
 
 function getCustomerUnpaidTotal(customerName: string): number {
@@ -405,7 +411,13 @@ async function deleteItem(invoice: Invoice) {
 
 async function handleExportPdf(item: Invoice) {
   const customer = customerData.value.find((c) => c.id === item.customer_id)
-  const lineItems = allInvoiceItems.value.filter((i) => i.invoice_id === item.id)
+  const lineItems = allInvoiceItems.value
+    .filter((i) => i.invoice_id === item.id)
+    .sort((a, b) => {
+      if (!a.date_of_service) return 1
+      if (!b.date_of_service) return -1
+      return a.date_of_service.localeCompare(b.date_of_service)
+    })
   try {
     await exportInvoicePdf(item, customer, lineItems, essoCoffeeLogo)
   } catch (error) {
@@ -417,7 +429,13 @@ async function handleExportPdf(item: Invoice) {
 function viewInvoice(item: Invoice) {
   viewInvoiceData.value = item
   viewCustomerData.value = customerData.value.find((c) => c.id === item.customer_id) ?? null
-  viewInvoiceItems.value = allInvoiceItems.value.filter((i) => i.invoice_id === item.id)
+  viewInvoiceItems.value = allInvoiceItems.value
+    .filter((i) => i.invoice_id === item.id)
+    .sort((a, b) => {
+      if (!a.date_of_service) return 1
+      if (!b.date_of_service) return -1
+      return a.date_of_service.localeCompare(b.date_of_service)
+    })
   viewDialog.value = true
 }
 
