@@ -28,6 +28,9 @@
       <template v-slot:top>
         <v-toolbar flat color="white">
           <v-toolbar-title>Invoices</v-toolbar-title>
+          <v-chip class="ml-4" color="error" variant="tonal">
+            Total Unpaid: {{ formatCurrency(totalUnpaid) }}
+          </v-chip>
           <v-divider class="mx-4" inset vertical />
           <v-spacer />
           <v-text-field
@@ -335,6 +338,12 @@ const currentInvoiceItems = computed(() => {
       if (!b.date_of_service) return -1
       return a.date_of_service.localeCompare(b.date_of_service)
     })
+})
+
+const totalUnpaid = computed(() => {
+  return items.value
+    .filter(invoice => !invoice.paid)
+    .reduce((sum, invoice) => sum + (invoice.subtotal ?? 0), 0)
 })
 
 function getCustomerUnpaidTotal(customerName: string): number {
