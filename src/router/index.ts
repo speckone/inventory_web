@@ -66,6 +66,12 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/email-settings',
+      name: 'Email Settings',
+      component: () => import('@/views/EmailSettings.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/about',
       name: 'About',
       component: () => import('@/views/About.vue'),

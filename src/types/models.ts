@@ -114,3 +114,7 @@ export interface PaginatedResponse<T> {
   page: number
   pages: number
 }
+
+export interface AppSettings {
+  [key: string]: string | null
+}
