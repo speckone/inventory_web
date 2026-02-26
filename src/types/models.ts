@@ -103,6 +103,15 @@ export interface User {
   role?: 'admin' | 'user'
 }
 
+export interface ManagedUser {
+  id: number
+  username: string
+  name: string | null
+  email: string
+  role: 'admin' | 'user'
+  active: boolean
+}
+
 export interface LoginCredentials {
   username: string
   password: string
