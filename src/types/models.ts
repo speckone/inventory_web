@@ -51,6 +51,7 @@ export interface Order {
   date: string
   status: 'New' | 'Submitted' | 'Received' | 'Cancelled'
   cost: number
+  order_items?: OrderItem[]
 }
 
 export interface OrderItem {

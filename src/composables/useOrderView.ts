@@ -74,21 +74,22 @@ export function useOrderView(status: string) {
   }
 
   async function loadOrderItems() {
-    orderItemData.value = await orderItemService.getAll()
+    const orders = await orderService.getByStatus(status)
+    orderData.value = orders
+    orderItemData.value = orders.flatMap((o) => o.order_items ?? [])
   }
 
   async function loadData() {
     loading.value = true
     try {
-      const [orders, products, orderItems, units] = await Promise.all([
+      const [orders, products, units] = await Promise.all([
         orderService.getByStatus(status),
         productService.getAll(),
-        orderItemService.getAll(),
         unitService.getAll(),
       ])
       orderData.value = orders
       productData.value = products
-      orderItemData.value = orderItems
+      orderItemData.value = orders.flatMap((o) => o.order_items ?? [])
       unitData.value = units
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load order data'
