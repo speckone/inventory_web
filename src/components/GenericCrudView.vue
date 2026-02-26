@@ -11,16 +11,16 @@
         <v-toolbar flat color="surface">
           <v-toolbar-title>{{ title }}</v-toolbar-title>
           <v-divider class="mx-4" inset vertical />
-          <v-text-field
-            v-model="search"
-            append-inner-icon="mdi-magnify"
-            label="Search"
-            single-line
-            hide-details
-            density="compact"
-            class="mr-4"
-            style="max-width: 300px"
-          />
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field
+              v-model="search"
+              append-inner-icon="mdi-magnify"
+              label="Search"
+              single-line
+              hide-details
+              density="compact"
+            />
+          </v-col>
           <v-spacer />
           <v-btn color="primary" class="mb-2" @click="dialog = true">New {{ title }}</v-btn>
         </v-toolbar>
@@ -28,8 +28,8 @@
       </template>
 
       <template #item.actions="{ item }">
-        <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
-        <v-icon size="small" @click="removeItem(item)">mdi-delete</v-icon>
+        <v-icon size="default" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
+        <v-icon size="default" @click="removeItem(item)">mdi-delete</v-icon>
       </template>
 
       <!-- Pass through any extra slots from parent -->
@@ -38,7 +38,7 @@
       </template>
     </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+    <v-dialog v-model="dialog" :max-width="600" :fullscreen="smAndDown" @click:outside="close">
       <v-card>
         <v-form v-model="valid" ref="formRef">
           <v-card-title>
@@ -72,7 +72,10 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useDisplay } from 'vuetify'
 import { useCrudView, type CrudService, type CrudField } from '@/composables/useCrudView'
+
+const { smAndDown } = useDisplay()
 
 interface Props {
   title: string

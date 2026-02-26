@@ -79,10 +79,10 @@
         <v-card>
           <v-card-title>Quick Actions</v-card-title>
           <v-card-text>
-            <v-btn color="primary" class="mr-3" prepend-icon="mdi-warehouse" @click="router.push('/inventory')">
+            <v-btn color="primary" class="mr-2 mb-2" prepend-icon="mdi-warehouse" @click="router.push('/inventory')">
               Go to Inventory
             </v-btn>
-            <v-btn color="primary" class="mr-3" prepend-icon="mdi-cart-plus" @click="createOrder">
+            <v-btn color="primary" class="mr-2 mb-2" prepend-icon="mdi-cart-plus" @click="createOrder">
               Create Order
             </v-btn>
             <v-btn v-if="authStore.isAdmin" color="primary" prepend-icon="mdi-receipt-text-plus" @click="router.push('/invoices')">

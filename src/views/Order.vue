@@ -31,41 +31,43 @@
       <template v-slot:group-header="{ item, columns, toggleGroup, isGroupOpen }">
         <tr>
           <td :colspan="columns.length">
-            <v-btn
-              size="small"
-              variant="text"
-              :icon="isGroupOpen(item) ? '$expand' : '$next'"
-              @click="toggleGroup(item)"
-            />
-            <v-chip :color="statusColor(getOrderStatus(item.value))" size="small" class="mr-2">{{ getOrderStatus(item.value) }}</v-chip>
-            Order: {{ item.value }} - {{ getOrderDate(item.value) }}
-            <v-divider class="mx-8" inset vertical />
-            Cost {{ formatCurrency(getOrderCost(item.value)) }}
+            <div class="d-flex flex-wrap align-center">
+              <v-btn
+                size="default"
+                variant="text"
+                :icon="isGroupOpen(item) ? '$expand' : '$next'"
+                @click="toggleGroup(item)"
+              />
+              <v-chip :color="statusColor(getOrderStatus(item.value))" size="small" class="mr-2">{{ getOrderStatus(item.value) }}</v-chip>
+              Order: {{ item.value }} - {{ getOrderDate(item.value) }}
+              <v-divider class="mx-2 mx-md-8" inset vertical />
+              Cost {{ formatCurrency(getOrderCost(item.value)) }}
 
-            <span class="ml-4">
-              <v-tooltip v-if="isNew(item.value)" location="end">
-                <template #activator="{ props }">
-                  <v-icon size="small" v-bind="props" @click="submitOrder(item.value)">mdi-send</v-icon>
-                </template>
-                <span>Submit order</span>
-              </v-tooltip>
+              <span class="ml-4">
+                <v-tooltip v-if="isNew(item.value)" location="end">
+                  <template #activator="{ props }">
+                    <v-icon size="default" v-bind="props" @click="submitOrder(item.value)">mdi-send</v-icon>
+                  </template>
+                  <span>Submit order</span>
+                </v-tooltip>
 
-              <v-tooltip v-if="isSubmitted(item.value)" location="start">
-                <template #activator="{ props }">
-                  <v-icon size="small" v-bind="props" @click="receiveOrder(item.value)">mdi-check-circle</v-icon>
-                </template>
-                <span>Mark order as received</span>
-              </v-tooltip>
+                <v-tooltip v-if="isSubmitted(item.value)" location="start">
+                  <template #activator="{ props }">
+                    <v-icon size="default" v-bind="props" @click="receiveOrder(item.value)">mdi-check-circle</v-icon>
+                  </template>
+                  <span>Mark order as received</span>
+                </v-tooltip>
 
-              <v-divider v-if="isNew(item.value)" class="mx-4" inset vertical />
+                <v-divider v-if="isNew(item.value)" class="mx-4" inset vertical />
 
-              <v-tooltip v-if="isNew(item.value)" location="end">
-                <template #activator="{ props }">
-                  <v-icon size="small" v-bind="props" @click="cancelOrder(item.value)">mdi-delete</v-icon>
-                </template>
-                <span>Cancel Order</span>
-              </v-tooltip>
-            </span>
+                <v-tooltip v-if="isNew(item.value)" location="end">
+                  <template #activator="{ props }">
+                    <v-icon size="default" v-bind="props" @click="cancelOrder(item.value)">mdi-delete</v-icon>
+                  </template>
+                  <span>Cancel Order</span>
+                </v-tooltip>
+              </span>
+            </div>
           </td>
         </tr>
       </template>

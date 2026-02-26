@@ -2,7 +2,7 @@
   <v-card class="ma-4">
     <v-progress-linear v-if="loading" indeterminate />
     <v-data-table
-      :headers="headers"
+      :headers="responsiveHeaders"
       :items="items"
       item-value="id"
       :sort-by="[{ key: 'id' }]"
@@ -11,14 +11,18 @@
       :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
       :row-props="getRowProps"
       fixed-header
-      height="700"
       show-select
+      class="inventory-table"
     >
       <template #top>
         <v-toolbar flat>
           <v-toolbar-title>Inventory</v-toolbar-title>
           <v-divider class="mx-4" inset vertical />
-          <v-text-field v-model="searchProduct" append-icon="mdi-magnify" label="Search" />
+          <v-row class="align-center">
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field v-model="searchProduct" append-icon="mdi-magnify" label="Search" hide-details density="compact" />
+            </v-col>
+          </v-row>
           <v-spacer />
           <v-btn color="primary" class="mb-2 mr-2" @click="dialog = true">New Item</v-btn>
           <v-btn color="secondary" class="mb-2" @click="createOrder">Create Order</v-btn>
@@ -40,12 +44,12 @@
         />
       </template>
       <template #item.actions="{ item }">
-        <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
-        <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+        <v-icon size="default" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
+        <v-icon size="default" @click="deleteItem(item)">mdi-delete</v-icon>
       </template>
     </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+    <v-dialog v-model="dialog" max-width="500" :fullscreen="smAndDown" @click:outside="close">
       <v-card>
         <v-form v-model="valid" ref="formRef">
           <v-card-title>
@@ -92,6 +96,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import type { InventoryItem, Product, Category, Unit } from '@/types/models'
 import { inventoryService } from '@/services/inventory.service'
 import { productService } from '@/services/product.service'
@@ -105,6 +110,7 @@ import EditableCell from '@/components/EditableCell.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
 
 const router = useRouter()
+const { smAndDown, mdAndDown } = useDisplay()
 const { confirm } = useConfirmDialog()
 const snackbarStore = useSnackbarStore()
 
@@ -138,7 +144,7 @@ const defaultItem: Partial<InventoryItem> = {
 
 const currentItem = ref<Partial<InventoryItem>>({ ...defaultItem })
 
-const headers = [
+const allHeaders = [
   { title: 'ID', key: 'id' },
   { title: 'Product', key: 'product' },
   { title: 'Unit', key: 'unit' },
@@ -150,6 +156,14 @@ const headers = [
   { title: 'Needed', key: 'needed_at_store' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
+
+const responsiveHeaders = computed(() => {
+  if (mdAndDown.value) {
+    const hiddenKeys = ['id', 'unit', 'capacity', 'reorder_level', 'cost']
+    return allHeaders.filter((h) => !hiddenKeys.includes(h.key))
+  }
+  return allHeaders
+})
 
 const items = computed(() => {
   const productMap = new Map(products.value.map((p) => [p.id, p]))
@@ -319,3 +333,10 @@ onMounted(() => {
   loadData()
 })
 </script>
+
+<style scoped>
+.inventory-table {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+</style>

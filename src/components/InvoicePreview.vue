@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="800" @update:model-value="$emit('update:modelValue', $event)">
+  <v-dialog :model-value="modelValue" max-width="800" :fullscreen="smAndDown" @update:model-value="$emit('update:modelValue', $event)">
     <v-card v-if="invoice" class="pa-6">
       <!-- Header -->
       <div class="d-flex justify-space-between mb-6">
@@ -52,9 +52,9 @@
 
       <!-- Totals -->
       <div class="d-flex flex-column align-end mt-6">
-        <div class="d-flex" style="width: 280px;">
+        <div class="d-flex align-center" style="max-width: 280px; width: 100%;">
           <span class="font-weight-bold font-italic flex-grow-1 text-right mr-4">TOTAL</span>
-          <span class="font-weight-bold text-right" style="width: 120px;">{{ invoice.subtotal != null ? formatCurrency(invoice.subtotal) : '$0.00' }}</span>
+          <span class="font-weight-bold text-right text-no-wrap">{{ invoice.subtotal != null ? formatCurrency(invoice.subtotal) : '$0.00' }}</span>
         </div>
       </div>
 
@@ -67,9 +67,12 @@
 </template>
 
 <script setup lang="ts">
+import { useDisplay } from 'vuetify'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import type { Invoice, InvoiceItem, Customer } from '@/types/models'
 import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
+
+const { smAndDown } = useDisplay()
 
 defineProps<{
   modelValue: boolean

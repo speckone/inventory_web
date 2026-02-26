@@ -29,19 +29,19 @@
       </template>
 
       <template v-slot:item.actions="{ item }">
-        <v-icon size="small" class="mr-2" @click="editItem(item)">
+        <v-icon size="default" class="mr-2" @click="editItem(item)">
           mdi-pencil
         </v-icon>
-        <v-icon size="small" class="mr-2" @click="deleteItem(item)">
+        <v-icon size="default" class="mr-2" @click="deleteItem(item)">
           mdi-delete
         </v-icon>
-        <v-icon size="small" @click="showOrderHistory(item)">
+        <v-icon size="default" @click="showOrderHistory(item)">
           mdi-history
         </v-icon>
       </template>
     </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="500" @click:outside="close">
+    <v-dialog v-model="dialog" max-width="500" :fullscreen="smAndDown" @click:outside="close">
       <v-card>
         <v-card-title>
           <span class="text-h5">{{ formTitle }}</span>
@@ -107,7 +107,7 @@
     </v-dialog>
 
     <!-- Order History Dialog -->
-    <v-dialog v-model="historyDialog" max-width="500" @click:outside="closeHistory">
+    <v-dialog v-model="historyDialog" max-width="500" :fullscreen="smAndDown" @click:outside="closeHistory">
       <v-card>
         <v-card-title>
           <span class="text-h5">Order history for {{ historyProductName }}</span>
@@ -135,6 +135,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useDisplay } from 'vuetify'
 import { productService } from '@/services/product.service'
 import { unitService } from '@/services/unit.service'
 import { vendorService } from '@/services/vendor.service'
@@ -146,6 +147,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatCurrency } from '@/utils/formatters'
 import type { Product, Unit, Vendor, Category, Order } from '@/types/models'
 
+const { smAndDown } = useDisplay()
 const { confirm } = useConfirmDialog()
 const snackbarStore = useSnackbarStore()
 

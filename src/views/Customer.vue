@@ -10,8 +10,8 @@
       @update:options="onOptionsUpdate"
     >
       <template #item.actions="{ item }">
-        <v-icon size="small" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
-        <v-icon size="small" @click="deleteItem(item)">mdi-delete</v-icon>
+        <v-icon size="default" class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
+        <v-icon size="default" @click="deleteItem(item)">mdi-delete</v-icon>
       </template>
       <template #item.unpaid_balance="{ item }">
         <v-chip v-if="getUnpaidBalance(item.id) > 0" color="warning" size="small" variant="flat">
@@ -51,7 +51,7 @@
       </template>
     </v-data-table-server>
 
-    <v-dialog v-model="dialog" max-width="600" @click:outside="close">
+    <v-dialog v-model="dialog" max-width="600" :fullscreen="smAndDown" @click:outside="close">
       <v-card>
               <v-form v-model="valid" ref="formRef">
                 <v-card-title>
@@ -122,6 +122,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useDisplay } from 'vuetify'
 import { customerService } from '@/services/customer.service'
 import { invoiceService } from '@/services/invoice.service'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
@@ -129,6 +130,7 @@ import { usePagination } from '@/composables/usePagination'
 import type { Customer, Invoice } from '@/types/models'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
+const { smAndDown, mdAndDown } = useDisplay()
 const { confirm } = useConfirmDialog()
 
 const {
@@ -155,7 +157,7 @@ const currentItem = ref<Partial<Customer>>({
 })
 const formRef = ref()
 
-const headers = [
+const allHeaders = [
   { title: 'ID', key: 'id' },
   { title: 'Name', key: 'name' },
   { title: 'Email', key: 'email' },
@@ -165,6 +167,13 @@ const headers = [
   { title: 'Unpaid Balance', key: 'unpaid_balance', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
+
+const headers = computed(() => {
+  if (mdAndDown.value) {
+    return allHeaders.filter(h => h.key !== 'email' && h.key !== 'phone')
+  }
+  return allHeaders
+})
 
 const formTitle = computed(() => currentItemId.value === -1 ? 'New Customer' : 'Edit Customer')
 

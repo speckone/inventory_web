@@ -16,8 +16,8 @@
         @keyup.escape="cancel"
       />
       <div class="d-flex justify-end">
-        <v-btn size="small" variant="text" @click="cancel">Cancel</v-btn>
-        <v-btn size="small" variant="text" color="primary" @click="save">Save</v-btn>
+        <v-btn size="default" variant="text" @click="cancel">Cancel</v-btn>
+        <v-btn size="default" variant="text" color="primary" @click="save">Save</v-btn>
       </div>
     </div>
   </div>
@@ -78,6 +78,9 @@ function cancel() {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
 }
 .editable-cell:hover {
   background-color: rgba(0, 0, 0, 0.04);

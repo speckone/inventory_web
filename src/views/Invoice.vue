@@ -26,43 +26,45 @@
       </template>
 
       <template v-slot:top>
-        <v-toolbar flat color="white">
+        <v-toolbar flat color="white" class="flex-wrap" style="height: auto; min-height: 64px;">
           <v-toolbar-title>Invoices</v-toolbar-title>
           <v-chip class="ml-4" color="error" variant="tonal">
             Total Unpaid: {{ formatCurrency(totalUnpaid) }}
           </v-chip>
           <v-divider class="mx-4" inset vertical />
           <v-spacer />
-          <v-text-field
-            v-model="search"
-            append-inner-icon="mdi-magnify"
-            label="Search"
-            single-line
-            hide-details
-            density="compact"
-            class="mr-4"
-            style="max-width: 250px;"
-          />
-          <v-chip
-            class="mr-2"
-            :color="hidePaid ? 'primary' : 'default'"
-            variant="outlined"
-            @click="hidePaid = !hidePaid"
-            clickable
-          >
-            <v-icon start>{{ hidePaid ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-            Hide Paid
-          </v-chip>
-          <v-chip
-            class="mr-4"
-            :color="hideOldInvoices ? 'primary' : 'default'"
-            variant="outlined"
-            @click="hideOldInvoices = !hideOldInvoices"
-            clickable
-          >
-            <v-icon start>{{ hideOldInvoices ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-            Hide Old (&gt;1mo)
-          </v-chip>
+          <v-row align="center" justify="end" class="flex-nowrap ma-0" style="flex: 0 1 auto; gap: 8px;">
+            <v-col cols="12" sm="6" md="4" class="pa-0">
+              <v-text-field
+                v-model="search"
+                append-inner-icon="mdi-magnify"
+                label="Search"
+                single-line
+                hide-details
+                density="compact"
+              />
+            </v-col>
+            <v-chip
+              class="mr-2"
+              :color="hidePaid ? 'primary' : 'default'"
+              variant="outlined"
+              @click="hidePaid = !hidePaid"
+              clickable
+            >
+              <v-icon start>{{ hidePaid ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+              Hide Paid
+            </v-chip>
+            <v-chip
+              class="mr-4"
+              :color="hideOldInvoices ? 'primary' : 'default'"
+              variant="outlined"
+              @click="hideOldInvoices = !hideOldInvoices"
+              clickable
+            >
+              <v-icon start>{{ hideOldInvoices ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+              Hide Old (&gt;1mo)
+            </v-chip>
+          </v-row>
           <v-btn color="primary" @click="openNew">New Invoice</v-btn>
         </v-toolbar>
       </template>
@@ -82,19 +84,19 @@
       </template>
 
       <template v-slot:item.actions="{ item }">
-        <v-icon size="small" class="mr-2" @click="editItem(item)">
+        <v-icon size="default" class="mr-2" @click="editItem(item)">
           mdi-pencil
         </v-icon>
-        <v-icon size="small" class="mr-2" @click="deleteItem(item)">
+        <v-icon size="default" class="mr-2" @click="deleteItem(item)">
           mdi-delete
         </v-icon>
-        <v-icon size="small" class="mr-2" @click="showInvoiceItems(item)">
+        <v-icon size="default" class="mr-2" @click="showInvoiceItems(item)">
           mdi-format-list-bulleted
         </v-icon>
-        <v-icon size="small" class="mr-2" @click="viewInvoice(item)">
+        <v-icon size="default" class="mr-2" @click="viewInvoice(item)">
           mdi-eye
         </v-icon>
-        <v-icon size="small" @click="handleExportPdf(item)">
+        <v-icon size="default" @click="handleExportPdf(item)">
           mdi-file-pdf-box
         </v-icon>
       </template>
@@ -110,7 +112,7 @@
     />
 
     <!-- Invoice Items Dialog -->
-    <v-dialog v-model="itemsDialog" max-width="800" @click:outside="closeItemsDialog">
+    <v-dialog v-model="itemsDialog" max-width="800" :fullscreen="smAndDown" @click:outside="closeItemsDialog">
       <v-card>
         <v-card-title>
           <span class="text-h5">Items for Invoice #{{ selectedInvoiceNumber }}</span>
@@ -135,10 +137,10 @@
             </template>
 
             <template v-slot:item.actions="{ item }">
-              <v-icon size="small" class="mr-2" @click="editInvoiceItem(item)">
+              <v-icon size="default" class="mr-2" @click="editInvoiceItem(item)">
                 mdi-pencil
               </v-icon>
-              <v-icon size="small" @click="deleteInvoiceItem(item)">
+              <v-icon size="default" @click="deleteInvoiceItem(item)">
                 mdi-delete
               </v-icon>
             </template>
@@ -158,7 +160,7 @@
               </v-col>
             </v-row>
             <v-row>
-              <v-col cols="4">
+              <v-col cols="12" sm="4">
                 <v-text-field
                   v-model.number="editedInvoiceItem.quantity"
                   label="Quantity"
@@ -166,7 +168,7 @@
                   :rules="[v => !!v || 'Quantity is required']"
                 />
               </v-col>
-              <v-col cols="4">
+              <v-col cols="12" sm="4">
                 <v-text-field
                   v-model.number="editedInvoiceItem.price_per_unit"
                   label="Price per Unit"
@@ -174,7 +176,7 @@
                   :rules="[v => !!v || 'Price per unit is required']"
                 />
               </v-col>
-              <v-col cols="4">
+              <v-col cols="12" sm="4">
                 <v-text-field
                   v-model="editedInvoiceItem.date_of_service"
                   label="Date of Service"
@@ -215,6 +217,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import { invoiceService } from '@/services/invoice.service'
 import { invoiceItemService } from '@/services/invoiceItem.service'
 import { customerService } from '@/services/customer.service'
@@ -231,6 +234,7 @@ import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
 
 const { confirm } = useConfirmDialog()
 const snackbarStore = useSnackbarStore()
+const { smAndDown } = useDisplay()
 
 const search = ref('')
 const dialog = ref(false)
