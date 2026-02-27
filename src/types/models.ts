@@ -67,12 +67,20 @@ export interface OrderItem {
 export interface Customer {
   id: number
   name: string
-  email?: string
   phone?: string
   address?: string
   city?: string
   state?: string
   zip_code?: string
+  contacts?: CustomerContact[]
+}
+
+export interface CustomerContact {
+  id: number
+  customer_id: number
+  name: string
+  email: string
+  primary: boolean
 }
 
 export interface Invoice {
