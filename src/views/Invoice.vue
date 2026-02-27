@@ -83,6 +83,10 @@
         </v-chip>
       </template>
 
+      <template v-slot:item.sent="{ item }">
+        <v-icon v-if="item.sent" color="success" size="small">mdi-email-check</v-icon>
+      </template>
+
       <template v-slot:item.actions="{ item }">
         <v-icon size="default" class="mr-2" @click="editItem(item)">
           mdi-pencil
@@ -98,6 +102,9 @@
         </v-icon>
         <v-icon size="default" @click="handleExportPdf(item)">
           mdi-file-pdf-box
+        </v-icon>
+        <v-icon v-if="authStore.isAdmin" size="default" class="ml-2" @click="handleSendInvoice(item)">
+          mdi-email-fast-outline
         </v-icon>
       </template>
 
@@ -211,6 +218,16 @@
       :invoice-items="viewInvoiceItems"
     />
 
+    <SendInvoiceDialog
+      v-model="sendDialog"
+      :invoice="sendInvoiceData"
+      :customer="sendCustomerData"
+      :invoice-items="sendInvoiceItems"
+      :contacts="sendContacts"
+      :loading="sendingEmail"
+      @confirm="confirmSendInvoice"
+    />
+
     <ConfirmDialog />
   </v-card>
 </template>
@@ -226,14 +243,18 @@ import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useSnackbarStore } from '@/stores/snackbar'
 import InvoiceForm from '@/components/InvoiceForm.vue'
 import InvoicePreview from '@/components/InvoicePreview.vue'
+import SendInvoiceDialog from '@/components/SendInvoiceDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+import { customerContactService } from '@/services/customerContact.service'
 import { formatCurrency, formatDate } from '@/utils/formatters'
-import { exportInvoicePdf } from '@/utils/invoicePdf'
-import type { Invoice, InvoiceItem, Customer, InvoiceItemTemplate } from '@/types/models'
+import { exportInvoicePdf, generateInvoicePdfBlob } from '@/utils/invoicePdf'
+import type { Invoice, InvoiceItem, Customer, InvoiceItemTemplate, CustomerContact } from '@/types/models'
 import essoCoffeeLogo from '@/assets/esso-coffee-logo.png'
 
 const { confirm } = useConfirmDialog()
 const snackbarStore = useSnackbarStore()
+const authStore = useAuthStore()
 const { smAndDown } = useDisplay()
 
 const search = ref('')
@@ -246,6 +267,12 @@ const viewDialog = ref(false)
 const viewInvoiceData = ref<Invoice | null>(null)
 const viewCustomerData = ref<Customer | null>(null)
 const viewInvoiceItems = ref<InvoiceItem[]>([])
+const sendDialog = ref(false)
+const sendInvoiceData = ref<Invoice | null>(null)
+const sendCustomerData = ref<Customer | null>(null)
+const sendInvoiceItems = ref<InvoiceItem[]>([])
+const sendContacts = ref<CustomerContact[]>([])
+const sendingEmail = ref(false)
 
 const invoiceData = ref<Invoice[]>([])
 const customerData = ref<Customer[]>([])
@@ -283,6 +310,7 @@ const headers = [
   { title: 'Date', key: 'date' },
   { title: 'Subtotal', key: 'subtotal' },
   { title: 'Paid', key: 'paid' },
+  { title: 'Sent', key: 'sent' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -571,6 +599,54 @@ async function saveInvoiceItem() {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to save invoice item'
     snackbarStore.showSnackbar({ text: message, color: 'error' })
+  }
+}
+
+async function handleSendInvoice(item: Invoice) {
+  const customer = customerData.value.find(c => c.id === item.customer_id)
+  if (!customer) {
+    snackbarStore.showSnackbar({ text: 'Customer not found', color: 'error' })
+    return
+  }
+  try {
+    const contacts = await customerContactService.getAll(customer.id)
+    sendContacts.value = contacts
+  } catch {
+    sendContacts.value = []
+  }
+  sendInvoiceData.value = item
+  sendCustomerData.value = customer
+  sendInvoiceItems.value = allInvoiceItems.value
+    .filter(i => i.invoice_id === item.id)
+    .sort((a, b) => {
+      if (!a.date_of_service) return 1
+      if (!b.date_of_service) return -1
+      return a.date_of_service.localeCompare(b.date_of_service)
+    })
+  sendDialog.value = true
+}
+
+async function confirmSendInvoice() {
+  if (!sendInvoiceData.value || !sendCustomerData.value) return
+  sendingEmail.value = true
+  try {
+    const pdfBlob = await generateInvoicePdfBlob(
+      sendInvoiceData.value,
+      sendCustomerData.value,
+      sendInvoiceItems.value,
+      essoCoffeeLogo,
+    )
+    const filename = `invoice_${sendInvoiceData.value.invoice_number}.pdf`
+    await invoiceService.sendEmail(sendInvoiceData.value.id, pdfBlob, filename)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    await loadInvoices()
+    snackbarStore.showSnackbar({ text: 'Invoice email sent', color: 'success' })
+    sendDialog.value = false
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to send invoice email'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
+  } finally {
+    sendingEmail.value = false
   }
 }
 

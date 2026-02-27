@@ -89,6 +89,7 @@ export interface Invoice {
   customer_id: number
   date?: string
   paid: boolean
+  sent: boolean
   subtotal?: number
   // Joined fields
   customer?: string

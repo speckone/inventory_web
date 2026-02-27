@@ -26,4 +26,12 @@ export const invoiceService = {
   async delete(id: number): Promise<void> {
     await api.delete(`/api/v1/invoice/${id}`)
   },
+
+  async sendEmail(invoiceId: number, pdfBlob: Blob, filename: string): Promise<void> {
+    const formData = new FormData()
+    formData.append('pdf', pdfBlob, filename)
+    await api.post(`/api/v1/invoice/${invoiceId}/send`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }

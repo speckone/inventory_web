@@ -12,12 +12,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-export async function exportInvoicePdf(
+async function buildInvoicePdf(
   item: Invoice,
   customer: Customer | undefined,
   lineItems: InvoiceItem[],
   logoSrc: string,
-): Promise<void> {
+): Promise<jsPDF> {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -120,6 +120,26 @@ export async function exportInvoicePdf(
   doc.setFont('helvetica', 'bold')
   doc.text(item.subtotal != null ? formatCurrency(item.subtotal) : '$0.00', totalsX, finalY + 10, { align: 'right' })
 
+  return doc
+}
+
+export async function exportInvoicePdf(
+  item: Invoice,
+  customer: Customer | undefined,
+  lineItems: InvoiceItem[],
+  logoSrc: string,
+): Promise<void> {
+  const doc = await buildInvoicePdf(item, customer, lineItems, logoSrc)
   const customerSlug = customer ? customer.name.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase() : 'unknown'
   doc.save(`invoice_${item.invoice_number}_${customerSlug}.pdf`)
+}
+
+export async function generateInvoicePdfBlob(
+  item: Invoice,
+  customer: Customer | undefined,
+  lineItems: InvoiceItem[],
+  logoSrc: string,
+): Promise<Blob> {
+  const doc = await buildInvoicePdf(item, customer, lineItems, logoSrc)
+  return doc.output('blob')
 }
