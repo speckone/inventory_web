@@ -65,11 +65,19 @@
                 <v-card-text>
                   <v-container>
                     <v-row>
-                      <v-col cols="12">
+                      <v-col cols="12" sm="6">
                         <v-text-field
                           v-model="currentItem.name"
                           label="Name"
                           :rules="[v => !!v || 'Name is required']"
+                        />
+                      </v-col>
+                      <v-col cols="12" sm="6">
+                        <v-text-field
+                          v-model="currentItem.short_code"
+                          label="Short Code"
+                          hint="Used for Telegram bot shorthand"
+                          persistent-hint
                         />
                       </v-col>
                       <v-col cols="12">
@@ -222,7 +230,8 @@ const currentItem = ref<Partial<Customer>>({
   address: '',
   city: '',
   state: '',
-  zip_code: ''
+  zip_code: '',
+  short_code: ''
 })
 const formRef = ref()
 
@@ -253,6 +262,7 @@ const currentCustomerContacts = computed(() =>
 const allHeaders = [
   { title: 'ID', key: 'id' },
   { title: 'Name', key: 'name' },
+  { title: 'Short Code', key: 'short_code' },
   { title: 'Primary Email', key: 'primary_email', sortable: false },
   { title: 'Phone', key: 'phone' },
   { title: 'City', key: 'city' },
@@ -263,7 +273,7 @@ const allHeaders = [
 
 const headers = computed(() => {
   if (mdAndDown.value) {
-    return allHeaders.filter(h => h.key !== 'primary_email' && h.key !== 'phone')
+    return allHeaders.filter(h => h.key !== 'primary_email' && h.key !== 'phone' && h.key !== 'short_code')
   }
   return allHeaders
 })
@@ -306,7 +316,7 @@ function getCustomerInvoices(customerId: number): Invoice[] {
 
 function openNew() {
   currentItemId.value = -1
-  currentItem.value = { name: '', phone: '', address: '', city: '', state: '', zip_code: '' }
+  currentItem.value = { name: '', phone: '', address: '', city: '', state: '', zip_code: '', short_code: '' }
   dialog.value = true
 }
 
@@ -336,7 +346,8 @@ function close() {
     address: '',
     city: '',
     state: '',
-    zip_code: ''
+    zip_code: '',
+    short_code: ''
   }
 }
 
@@ -349,7 +360,8 @@ async function save() {
       address: currentItem.value.address,
       city: currentItem.value.city,
       state: currentItem.value.state,
-      zip_code: currentItem.value.zip_code
+      zip_code: currentItem.value.zip_code,
+      short_code: currentItem.value.short_code
     }
     if (currentItemId.value > -1) {
       await customerService.update(currentItemId.value, customerData)

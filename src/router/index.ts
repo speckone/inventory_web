@@ -72,6 +72,12 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/settings/telegram',
+      name: 'TelegramSettings',
+      component: () => import('@/views/TelegramSettings.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/users',
       name: 'Users',
       component: () => import('@/views/UserManagement.vue'),

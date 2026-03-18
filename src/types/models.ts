@@ -30,6 +30,7 @@ export interface InvoiceItemTemplate {
   id: number
   name: string
   price_per_unit: number | null
+  short_code?: string
 }
 
 export interface InventoryItem {
@@ -72,6 +73,7 @@ export interface Customer {
   city?: string
   state?: string
   zip_code?: string
+  short_code?: string
   contacts?: CustomerContact[]
 }
 

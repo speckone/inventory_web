@@ -16,10 +16,12 @@ const headers = [
   { title: 'ID', key: 'id' },
   { title: 'Description', key: 'name' },
   { title: 'Price Per Unit', key: 'price_per_unit' },
+  { title: 'Short Code', key: 'short_code' },
 ]
 
 const fields: CrudField[] = [
   { key: 'name', label: 'Description', rules: [(v: unknown) => !!v || 'Description is required'] },
   { key: 'price_per_unit', label: 'Price Per Unit' },
+  { key: 'short_code', label: 'Short Code' },
 ]
 </script>

@@ -120,6 +120,7 @@ const settingsItems = [
   { title: 'Units', icon: 'mdi-scale', route: '/units' },
   { title: 'Item Templates', icon: 'mdi-text-box-outline', route: '/invoice-item-templates' },
   { title: 'Email', icon: 'mdi-email-outline', route: '/email-settings' },
+  { title: 'Telegram', icon: 'mdi-robot', route: '/settings/telegram' },
   { title: 'Users', icon: 'mdi-account-cog', route: '/users' },
 ]
 
