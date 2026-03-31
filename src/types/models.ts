@@ -5,6 +5,7 @@ export interface Product {
   unit_id: number
   vendor_id: number
   category_id: number
+  archived?: boolean
   // Joined fields
   unit?: string
   category?: string
@@ -74,6 +75,7 @@ export interface Customer {
   state?: string
   zip_code?: string
   short_code?: string
+  archived?: boolean
   contacts?: CustomerContact[]
 }
 

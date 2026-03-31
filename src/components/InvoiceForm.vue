@@ -48,6 +48,14 @@
       </v-card-text>
 
       <v-card-actions>
+        <v-btn
+          v-if="localItem.id && !localItem.sent"
+          color="success"
+          variant="outlined"
+          @click="$emit('mark-sent')"
+        >
+          Mark as Sent
+        </v-btn>
         <v-spacer />
         <v-btn color="blue-darken-1" variant="text" @click="$emit('close')">Cancel</v-btn>
         <v-btn color="blue-darken-1" variant="text" @click="$emit('save', localItem)">Save</v-btn>
@@ -72,6 +80,7 @@ defineEmits<{
   'update:modelValue': [value: boolean]
   close: []
   save: [item: Partial<Invoice>]
+  'mark-sent': []
 }>()
 
 const localItem = ref<Partial<Invoice>>({ ...props.editedItem })

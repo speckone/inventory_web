@@ -51,6 +51,16 @@
           <v-toolbar-title>Customers</v-toolbar-title>
           <v-divider class="mx-4" inset vertical />
           <v-spacer />
+          <v-chip
+            class="mr-4"
+            :color="includeArchived ? 'primary' : 'default'"
+            variant="outlined"
+            @click="includeArchived = !includeArchived"
+            clickable
+          >
+            <v-icon start>{{ includeArchived ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon>
+            Include Archived
+          </v-chip>
           <v-btn color="primary" @click="openNew">New Customer</v-btn>
         </v-toolbar>
       </template>
@@ -108,6 +118,14 @@
                         <v-text-field
                           v-model="currentItem.zip_code"
                           label="Zip Code"
+                        />
+                      </v-col>
+                      <v-col cols="12">
+                        <v-switch
+                          v-model="currentItem.archived"
+                          label="Archived"
+                          color="warning"
+                          hide-details
                         />
                       </v-col>
                     </v-row>
@@ -210,13 +228,15 @@ import { formatCurrency, formatDate } from '@/utils/formatters'
 const { smAndDown, mdAndDown } = useDisplay()
 const { confirm } = useConfirmDialog()
 
+const includeArchived = ref(false)
+
 const {
   items: paginatedCustomers,
   totalItems: totalCustomers,
   loading: customersLoading,
   onOptionsUpdate,
   refresh: refreshCustomers,
-} = usePagination<Customer>((page, perPage) => customerService.getPage({ page, perPage }))
+} = usePagination<Customer>((page, perPage) => customerService.getPage({ page, perPage, archived: includeArchived.value }))
 
 const invoices = ref<Invoice[]>([])
 const contacts = ref<CustomerContact[]>([])
@@ -231,7 +251,8 @@ const currentItem = ref<Partial<Customer>>({
   city: '',
   state: '',
   zip_code: '',
-  short_code: ''
+  short_code: '',
+  archived: false
 })
 const formRef = ref()
 
@@ -268,6 +289,7 @@ const allHeaders = [
   { title: 'City', key: 'city' },
   { title: 'State', key: 'state' },
   { title: 'Unpaid Balance', key: 'unpaid_balance', sortable: true },
+  { title: 'Archived', key: 'archived' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -299,6 +321,10 @@ watch(paginatedCustomers, () => {
   loadContacts()
 })
 
+watch(includeArchived, () => {
+  refreshCustomers()
+})
+
 async function loadData() {
   invoices.value = await invoiceService.getAll()
   await loadContacts()
@@ -316,7 +342,7 @@ function getCustomerInvoices(customerId: number): Invoice[] {
 
 function openNew() {
   currentItemId.value = -1
-  currentItem.value = { name: '', phone: '', address: '', city: '', state: '', zip_code: '', short_code: '' }
+  currentItem.value = { name: '', phone: '', address: '', city: '', state: '', zip_code: '', short_code: '', archived: false }
   dialog.value = true
 }
 
@@ -347,7 +373,8 @@ function close() {
     city: '',
     state: '',
     zip_code: '',
-    short_code: ''
+    short_code: '',
+    archived: false
   }
 }
 
@@ -361,7 +388,8 @@ async function save() {
       city: currentItem.value.city,
       state: currentItem.value.state,
       zip_code: currentItem.value.zip_code,
-      short_code: currentItem.value.short_code
+      short_code: currentItem.value.short_code,
+      archived: currentItem.value.archived
     }
     if (currentItemId.value > -1) {
       await customerService.update(currentItemId.value, customerData)

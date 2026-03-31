@@ -116,6 +116,7 @@
       :form-title="formTitle"
       @close="close"
       @save="save"
+      @mark-sent="handleMarkAsSent"
     />
 
     <!-- Invoice Items Dialog -->
@@ -647,6 +648,19 @@ async function confirmSendInvoice() {
     snackbarStore.showSnackbar({ text: message, color: 'error' })
   } finally {
     sendingEmail.value = false
+  }
+}
+
+async function handleMarkAsSent() {
+  if (editedId.value === -1) return
+  try {
+    await invoiceService.markAsSent(editedId.value)
+    close()
+    await loadData()
+    snackbarStore.showSnackbar({ text: 'Invoice marked as sent', color: 'success' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to mark invoice as sent'
+    snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
 

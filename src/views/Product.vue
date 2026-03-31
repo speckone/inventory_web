@@ -20,6 +20,16 @@
             density="compact"
           />
           <v-spacer />
+          <v-chip
+            class="mr-4"
+            :color="includeArchived ? 'primary' : 'default'"
+            variant="outlined"
+            @click="includeArchived = !includeArchived"
+            clickable
+          >
+            <v-icon start>{{ includeArchived ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon>
+            Include Archived
+          </v-chip>
           <v-btn color="primary" class="mb-2" @click="dialog = true">New Product</v-btn>
         </v-toolbar>
       </template>
@@ -95,6 +105,16 @@
                 />
               </v-col>
             </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-switch
+                  v-model="editedItem.archived"
+                  label="Archived"
+                  color="warning"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
           </v-container>
         </v-card-text>
 
@@ -134,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { productService } from '@/services/product.service'
 import { unitService } from '@/services/unit.service'
@@ -154,6 +174,7 @@ const snackbarStore = useSnackbarStore()
 const search = ref('')
 const dialog = ref(false)
 const loading = ref(false)
+const includeArchived = ref(false)
 const historyDialog = ref(false)
 const historyProductName = ref('')
 const historyData = ref<Order[]>([])
@@ -168,6 +189,7 @@ const editedId = ref(-1)
 const defaultItem: Partial<Product> = {
   name: '',
   unit_price: 0,
+  archived: false,
 }
 
 const editedItem = ref<Partial<Product>>({ ...defaultItem })
@@ -179,6 +201,7 @@ const headers = [
   { title: 'Category', key: 'category' },
   { title: 'Unit Price', key: 'unit_price' },
   { title: 'Vendor', key: 'vendor' },
+  { title: 'Archived', key: 'archived' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -208,14 +231,14 @@ const items = computed(() => {
 })
 
 async function loadProducts() {
-  productData.value = await productService.getAll()
+  productData.value = await productService.getAll({ archived: includeArchived.value })
 }
 
 async function loadData() {
   loading.value = true
   try {
     const [products, units, vendors, categories] = await Promise.all([
-      productService.getAll(),
+      productService.getAll({ archived: includeArchived.value }),
       unitService.getAll(),
       vendorService.getAll(),
       categoryService.getAll(),
@@ -283,6 +306,7 @@ async function save() {
         unit_id: editedItem.value.unit_id,
         vendor_id: editedItem.value.vendor_id,
         category_id: editedItem.value.category_id,
+        archived: editedItem.value.archived,
       })
     } else {
       await productService.create({
@@ -291,6 +315,7 @@ async function save() {
         unit_id: editedItem.value.unit_id,
         vendor_id: editedItem.value.vendor_id,
         category_id: editedItem.value.category_id,
+        archived: editedItem.value.archived,
       })
     }
     close()
@@ -300,6 +325,10 @@ async function save() {
     snackbarStore.showSnackbar({ text: message, color: 'error' })
   }
 }
+
+watch(includeArchived, () => {
+  loadData()
+})
 
 onMounted(() => {
   loadData()

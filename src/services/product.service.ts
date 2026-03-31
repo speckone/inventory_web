@@ -2,8 +2,12 @@ import api from './api'
 import type { Product, Order, PaginatedResponse } from '@/types/models'
 
 export const productService = {
-  async getAll(): Promise<Product[]> {
-    const { data } = await api.get('/api/v1/product?per_page=10000')
+  async getAll(params?: { archived?: boolean }): Promise<Product[]> {
+    let url = '/api/v1/product?per_page=10000'
+    if (params?.archived) {
+      url += '&archived=true'
+    }
+    const { data } = await api.get(url)
     return data.results
   },
 

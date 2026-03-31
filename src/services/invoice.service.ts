@@ -27,6 +27,11 @@ export const invoiceService = {
     await api.delete(`/api/v1/invoice/${id}`)
   },
 
+  async markAsSent(id: number): Promise<Invoice> {
+    const { data } = await api.put(`/api/v1/invoice/${id}`, { sent: true })
+    return data
+  },
+
   async sendEmail(invoiceId: number, pdfBlob: Blob, filename: string): Promise<void> {
     const formData = new FormData()
     formData.append('pdf', pdfBlob, filename)
