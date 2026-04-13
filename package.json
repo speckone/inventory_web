@@ -13,8 +13,9 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
-    "axios": "^1.7.9",
-    "jspdf": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "axios": "^1.15.0",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "pinia": "^2.3.0",
     "vue": "^3.5.13",
@@ -29,9 +30,9 @@
     "jsdom": "^25.0.1",
     "sass": "^1.83.0",
     "typescript": "^5.7.2",
-    "vite": "^6.0.5",
+    "vite": "^6.4.2",
     "vite-plugin-vuetify": "^2.0.4",
-    "vitest": "^2.1.8",
+    "vitest": "^4.1.4",
     "vue-tsc": "^2.2.0"
   }
 }
